@@ -1,20 +1,20 @@
 <?php
-      
+
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-return apply_filters('wc_payment_highway_settings', 
+return apply_filters( 'wc_payment_highway_settings',
     array(
-  
+
         'enabled' => array(
             'title'   => __( 'Enable/Disable', 'wc-payment-highway' ),
             'type'    => 'checkbox',
             'label'   => __( 'Enable Payment Highway', 'wc-payment-highway' ),
             'default' => 'yes'
         ),
-        
-        'title' => array(
+
+        'title'       => array(
             'title'       => __( 'Title', 'wc-payment-highway' ),
             'type'        => 'text',
             'description' => __( 'This controls the title for the payment method the customer sees during checkout.', 'wc-payment-highway' ),
@@ -28,7 +28,7 @@ return apply_filters('wc_payment_highway_settings',
             'default'     => __( 'test', 'wc-payment-highway' ),
             'desc_tip'    => true,
         ),
-        
+
         'sph_merchant' => array(
             'title'       => __( 'SPH Merchant', 'wc-payment-highway' ),
             'type'        => 'text',
@@ -36,7 +36,7 @@ return apply_filters('wc_payment_highway_settings',
             'default'     => __( 'test_merchantId', 'wc-payment-highway' ),
             'desc_tip'    => true,
         ),
-        
+
         'sph_url' => array(
             'title'       => __( 'SPH Endpoint URL', 'wc-payment-highway' ),
             'type'        => 'text',
@@ -44,7 +44,7 @@ return apply_filters('wc_payment_highway_settings',
             'default'     => __( 'https://v1-hub-staging.sph-test-solinor.com', 'wc-payment-highway' ),
             'desc_tip'    => true,
         ),
-        
+
         'api_key_id' => array(
             'title'       => __( 'API Key ID', 'wc-payment-highway' ),
             'type'        => 'text',
@@ -52,7 +52,7 @@ return apply_filters('wc_payment_highway_settings',
             'default'     => __( 'testKey', 'wc-payment-highway' ),
             'desc_tip'    => true,
         ),
-        
+
         'api_key_secret' => array(
             'title'       => __( 'API Key Secret', 'wc-payment-highway' ),
             'type'        => 'text',
@@ -60,7 +60,7 @@ return apply_filters('wc_payment_highway_settings',
             'default'     => __( 'testSecret', 'wc-payment-highway' ),
             'desc_tip'    => true,
         ),
-        
+
         'description' => array(
             'title'       => __( 'Description', 'wc-payment-highway' ),
             'type'        => 'textarea',
@@ -68,7 +68,7 @@ return apply_filters('wc_payment_highway_settings',
             'default'     => __( 'You will be redirected to Payment Highway credit card payment form.', 'wc-payment-highway' ),
             'desc_tip'    => true,
         ),
-        
+
         'instructions' => array(
             'title'       => __( 'Instructions', 'wc-payment-highway' ),
             'type'        => 'textarea',
@@ -94,15 +94,15 @@ return apply_filters('wc_payment_highway_settings',
             'default'     => 'FI',
             'desc_tip'    => true,
             'options'     => array(
-                'FI'   => __( 'Finnish', 'wc-payment-highway' ),
-                'EN'   => __( 'English', 'wc-payment-highway' ),
+                'FI' => __( 'Finnish', 'wc-payment-highway' ),
+                'EN' => __( 'English', 'wc-payment-highway' ),
             ),
         ),
-        
+
         'debug_data' => array(
-            'title'       => __( 'Debug data', 'wc-payment-highway' ),
-            'type'        => 'textarea',
-            'default'     => json_encode($wpdb->get_results("SELECT user_id, token FROM `" . $wpdb->prefix . "woocommerce_payment_tokens` WHERE gateway_id = 'payment_highway'")),
-        ),  
+            'title'   => __( 'Debug data', 'wc-payment-highway' ),
+            'type'    => 'textarea',
+            'default' => json_encode( $wpdb->get_results( "SELECT user_id, token FROM `" . $wpdb->prefix . "woocommerce_payment_tokens` WHERE gateway_id = 'payment_highway'" ) ),
+        ),
     )
 );
