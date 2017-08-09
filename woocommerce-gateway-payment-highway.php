@@ -34,6 +34,8 @@ add_action( 'plugins_loaded', 'init_payment_highway_class' );
 /**
  * SETTINGS
  */
+define( 'WC_PAYMENTHIGHWAY_MIN_PHP_VER', '5.4.0' );
+define( 'WC_PAYMENTHIGHWAY_MIN_WC_VER', '3.0.0' );
 $paymentHighwaySuffixArray = array(
     'paymenthighway_payment_success',
     'paymenthighway_add_card_success',
@@ -119,6 +121,10 @@ function init_payment_highway_class() {
         public function __construct() {
             global $paymentHighwaySuffixArray;
 
+            if ( self::check_environment() ) {
+                return;
+            }
+
             $this->id                 = 'payment_highway';
             $this->name               = 'Payment Highway';
             $this->has_fields         = false;
@@ -127,7 +133,6 @@ function init_payment_highway_class() {
             $this->supports           = array(
                 'subscriptions',
                 'products',
-                'refunds',
                 'subscription_cancellation',
                 'subscription_reactivation',
                 'subscription_suspension',
@@ -158,6 +163,26 @@ function init_payment_highway_class() {
             foreach ($paymentHighwaySuffixArray as $action) {
                 add_action($action, array($this, $action));
             }
+        }
+
+        static function check_environment() {
+            if ( version_compare( phpversion(), WC_PAYMENTHIGHWAY_MIN_PHP_VER, '<' ) ) {
+                $message = __( ' The minimum PHP version required for Payment Highway is %1$s. You are running %2$s.', 'wc-payment-highway' );
+
+                return sprintf( $message, WC_STRIPE_MIN_PHP_VER, phpversion() );
+            }
+
+            if ( ! defined( 'WC_VERSION' ) ) {
+                return __( 'WooCommerce needs to be activated.', 'wc-payment-highway' );
+            }
+
+            if ( version_compare( WC_VERSION, WC_PAYMENTHIGHWAY_MIN_WC_VER, '<' ) ) {
+                $message = __( 'The minimum WooCommerce version required for Payment Highway is %1$s. You are running %2$s.', 'wc-payment-highway' );
+
+                return sprintf( $message, WC_PAYMENTHIGHWAY_MIN_WC_VER, WC_VERSION );
+            }
+
+            return false;
         }
 
 
