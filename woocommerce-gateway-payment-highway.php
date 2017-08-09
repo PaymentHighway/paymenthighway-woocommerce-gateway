@@ -48,7 +48,7 @@ function check_for_payment_highway_response() {
     foreach ($intersect as $action) {
         // Start the gateways
         WC()->payment_gateways();
-            do_action( $action );
+        do_action( $action );
     }
 }
 
@@ -125,6 +125,8 @@ function init_payment_highway_class() {
                 return;
             }
 
+            $this->check_subscriptions_plugin();
+
             $this->id                 = 'payment_highway';
             $this->name               = 'Payment Highway';
             $this->has_fields         = false;
@@ -185,6 +187,11 @@ function init_payment_highway_class() {
             return false;
         }
 
+        public function check_subscriptions_plugin() {
+            if ( class_exists( 'WC_Subscriptions_Order' ) && function_exists( 'wcs_create_renewal_order' ) ) {
+                include_once( dirname( __FILE__ ) . '/includes/wc-paymenthighway-subscriptions.php' );
+            }
+        }
 
         /**
          * Initialize Gateway Settings Form Fields
@@ -214,17 +221,17 @@ function init_payment_highway_class() {
                 $order    = wc_get_order( $order_id );
                 if ( $forms->verifySignature( $_GET ) ) {
                     $response = $forms->commitPayment( $_GET['sph-transaction-id'], $_GET['sph-amount'], $_GET['sph-currency'] );
-                    $this->handle_payment_response( $response, $order );
+                    $this->handle_payment_response( $response, $order, $_GET['sph-transaction-id'] );
                 }
                 $this->redirect_failed_payment( $order, 'Signature mismatch: ' . print_r($_GET, true) );
             }
         }
 
-        private function handle_payment_response( $response, $order ) {
+        private function handle_payment_response( $response, $order, $tx_id ) {
             $responseObject = json_decode( $response );
             if ( $responseObject->result->code === 100 ) {
                 $this->logger->info( $response );
-                $order->update_status( 'on-hold', __( 'Payment Highway payment completed', 'wc-payment-highway' ) );
+                $order->payment_complete($tx_id);
                 if ( get_current_user_id() !== 0 && ! $this->save_card( $responseObject ) ) {
                     wc_add_notice( __( 'Card could not be saved.', 'wc-payment-highway' ), 'notice' );
                 }
