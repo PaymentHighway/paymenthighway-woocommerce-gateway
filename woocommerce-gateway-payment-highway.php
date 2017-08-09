@@ -34,22 +34,19 @@ add_action( 'plugins_loaded', 'init_payment_highway_class' );
 /**
  * SETTINGS
  */
-$paymentHighwayPaymentSuccessSuffix = 'paymenthighway_payment_success';
-$paymentHighwayAddCardSuccessSuffix = 'paymenthighway_add_card_success';
+$paymentHighwaySuffixArray = array(
+    'paymenthighway_payment_success',
+    'paymenthighway_add_card_success',
+    'paymenthighway_add_card_failure',
+    );
 
 function check_for_payment_highway_response() {
-    global $paymentHighwayPaymentSuccessSuffix, $paymentHighwayAddCardSuccessSuffix;
-    $paymentSuccess = isset( $_GET[ $paymentHighwayPaymentSuccessSuffix ] );
-    $addCardSuccess = isset( $_GET[ $paymentHighwayAddCardSuccessSuffix ] );
-    if ( $paymentSuccess || $addCardSuccess ) {
+    global $paymentHighwaySuffixArray;
+    $intersect = array_intersect(array_keys($_GET), $paymentHighwaySuffixArray);
+    foreach ($intersect as $action) {
         // Start the gateways
         WC()->payment_gateways();
-        if ( $paymentSuccess ) {
-            do_action( 'check_payment_highway_payment_response' );
-        } elseif ( $addCardSuccess ) {
-            do_action( 'check_payment_highway_add_card_response' );
-        }
-
+            do_action( $action );
     }
 }
 
@@ -117,8 +114,10 @@ function init_payment_highway_class() {
         public $title;
         public $description;
         public $instructions;
+        public $accept_cvc_required;
 
         public function __construct() {
+            global $paymentHighwaySuffixArray;
 
             $this->id                 = 'payment_highway';
             $this->name               = 'Payment Highway';
@@ -149,13 +148,16 @@ function init_payment_highway_class() {
             $this->title        = $this->get_option( 'title' );
             $this->description  = $this->get_option( 'description' );
             $this->instructions = $this->get_option( 'instructions', $this->description );
+            $this->accept_cvc_required = $this->get_option('accept_cvc_required') === 'yes' ? true : false;
 
             add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array(
                 $this,
                 'process_admin_options'
             ) );
-            add_action( 'check_payment_highway_payment_response', array( $this, 'check_payment_response' ) );
-            add_action( 'check_payment_highway_add_card_response', array( $this, 'check_add_card_response' ) );
+
+            foreach ($paymentHighwaySuffixArray as $action) {
+                add_action($action, array($this, $action));
+            }
         }
 
 
@@ -175,21 +177,21 @@ function init_payment_highway_class() {
             }
         }
 
-        public function check_payment_response() {
-            global $woocommerce, $paymentHighwayPaymentSuccessSuffix;
+        public function paymenthighway_payment_success() {
+            global $woocommerce;
 
-            if ( isset( $_GET[ $paymentHighwayPaymentSuccessSuffix ] ) ) {
+            if ( isset( $_GET[ __FUNCTION__  ] ) ) {
                 if ( ! class_exists( 'WC_Payment_Highway_Forms' ) ) {
                     include( dirname( __FILE__ ) . '/includes/class-forms-payment-highway.php' );
                 }
                 $order_id = $_GET['sph-order'];
-                $forms    = new WC_Payment_Highway_Forms();
+                $forms    = new WC_Payment_Highway_Forms($this->logger);
                 $order    = wc_get_order( $order_id );
                 if ( $forms->verifySignature( $_GET ) ) {
                     $response = $forms->commitPayment( $_GET['sph-transaction-id'], $_GET['sph-amount'], $_GET['sph-currency'] );
                     $this->handle_payment_response( $response, $order );
                 }
-                $this->redirect_failed_payment( $order, 'Signature mismatch: ' . $_GET );
+                $this->redirect_failed_payment( $order, 'Signature mismatch: ' . print_r($_GET, true) );
             }
         }
 
@@ -219,7 +221,7 @@ function init_payment_highway_class() {
 
         private function save_card( $responseObject ) {
             $returnValue = false;
-            if ( $responseObject->card->cvc_required === "no" ) {
+            if ( $responseObject->card->cvc_required === "no" || $this->accept_cvc_required ) {
                 $token = new WC_Payment_Token_CC();
                 // set
                 $token->set_token( $responseObject->card_token );
@@ -238,29 +240,40 @@ function init_payment_highway_class() {
             return $returnValue;
         }
 
-        public function check_add_card_response() {
-            global $woocommerce, $paymentHighwayAddCardSuccessSuffix;
+        public function paymenthighway_add_card_failure() {
+            global $woocommerce;
+            if ( isset( $_GET[ __FUNCTION__  ] ) ) {
+                if ( ! class_exists( 'WC_Payment_Highway_Forms' ) ) {
+                    include( dirname( __FILE__ ) . '/includes/class-forms-payment-highway.php' );
+                }
+                wc_add_notice( __( 'Card  could not be saved.', 'wc-payment-highway' ), 'error' );
+                $this->logger->alert(print_r($_GET, true));
+            }
+        }
 
-            if ( isset( $_GET[ $paymentHighwayAddCardSuccessSuffix ] ) ) {
+        public function paymenthighway_add_card_success() {
+            global $woocommerce;
+
+            if ( isset( $_GET[ __FUNCTION__  ] ) ) {
                 if ( ! class_exists( 'WC_Payment_Highway_Forms' ) ) {
                     include( dirname( __FILE__ ) . '/includes/class-forms-payment-highway.php' );
                 }
 
-                $forms = new WC_Payment_Highway_Forms();
+                $forms = new WC_Payment_Highway_Forms($this->logger);
                 if ( $forms->verifySignature( $_GET ) ) {
                     $response = $forms->tokenizeCard( $_GET['sph-tokenization-id'] );
                     $this->logger->info( $response );
                     $this->handle_add_card_response($response);
                     $this->redirect_add_card( '', $response );
                 }
-                $this->redirect_add_card( '', 'Signature mismatch: ' . $_GET );
+                $this->redirect_add_card( '', 'Signature mismatch: ' . print_r($_GET,true) );
             }
         }
 
         private function handle_add_card_response($response) {
             $responseObject = json_decode( $response );
             if ( $responseObject->result->code === 100 ) {
-                if ( $responseObject->card->cvc_required === "no" ) {
+                if ( $responseObject->card->cvc_required === "no" || $this->accept_cvc_required ) {
                     $this->save_card( $responseObject );
                     wp_redirect( get_permalink( get_option( 'woocommerce_myaccount_page_id' ) ) );
                     exit;
@@ -295,7 +308,7 @@ function init_payment_highway_class() {
             if ( ! class_exists( 'WC_Payment_Highway_Forms' ) ) {
                 include( dirname( __FILE__ ) . '/includes/class-forms-payment-highway.php' );
             }
-            $forms = new WC_Payment_Highway_Forms();
+            $forms = new WC_Payment_Highway_Forms($this->logger);
 
             return array(
                 'result'   => 'success',
@@ -317,9 +330,8 @@ function init_payment_highway_class() {
                 include( dirname( __FILE__ ) . '/includes/class-forms-payment-highway.php' );
             }
 
-            $forms = new WC_Payment_Highway_Forms();
-
-            wp_redirect( $forms->addCardForm(), 303 );
+            $forms = new WC_Payment_Highway_Forms($this->logger);
+            wp_redirect( $forms->addCardForm($this->accept_cvc_required), 303 );
             exit;
         }
 

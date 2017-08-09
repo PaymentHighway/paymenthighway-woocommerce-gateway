@@ -14,6 +14,13 @@ return apply_filters( 'wc_payment_highway_settings',
             'default' => 'yes'
         ),
 
+        'accept_cvc_required' => array(
+            'title'   => __( 'Accept CVC required cards', 'wc-payment-highway' ),
+            'type'    => 'checkbox',
+            'label'   => __( 'Users can save cards that requires CVC for every purchase.', 'wc-payment-highway' ),
+            'default' => 'no'
+        ),
+
         'title'       => array(
             'title'       => __( 'Title', 'wc-payment-highway' ),
             'type'        => 'text',

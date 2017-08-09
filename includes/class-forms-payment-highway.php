@@ -21,12 +21,14 @@ class WC_Payment_Highway_Forms {
     private $debug;
     private $secureSigner;
     private $paymentApi;
-
+    private $logger;
 
     /**
+     * @param WC_Logger $logger
      * @param array $options
      */
-    public function __construct( $options = array() ) {
+    public function __construct(WC_Logger $logger, $options = array() ) {
+        $this->logger = $logger;
         $this->options         = get_option( 'woocommerce_payment_highway_settings', $options );
         $this->signatureKeyId  = $this->options['api_key_id'];
         $this->signatureSecret = $this->options['api_key_secret'];
@@ -81,13 +83,16 @@ class WC_Payment_Highway_Forms {
      *
      * @return array
      */
-    private function createAddCardUrls( $successSuffix = '' ) {
+    private function createAddCardUrls( $successSuffix = '', $failureSuffix = '' ) {
         $successUrl = get_permalink();
         if ( $successSuffix !== '' ) {
             $successUrl .= '?' . $successSuffix;
         }
-        $failureUrl = $successUrl;
-        $cancelUrl  = $successUrl;
+        $failureUrl = get_permalink();
+        if( $failureSuffix !== '' ) {
+            $failureUrl .= '?' . $failureSuffix;
+        }
+        $cancelUrl  = $failureUrl;
 
         return array(
             'successUrl' => $successUrl,
@@ -107,21 +112,31 @@ class WC_Payment_Highway_Forms {
         $this->order_url = WC_Payment_Gateway::get_return_url( $this->order );
 
         $amount      = intval( $this->order->get_total() * 100 );
-        $description = $this->order_id . ' ' . get_the_title( $this->order_id );
+        $description = $this->order_id . ': ' . $this->getOrderItemsAsString();
         $form        = $this->formBuilder( $this->createCheckoutReturnUrls( "paymenthighway_payment_success" ) )
                             ->generateAddCardAndPaymentParameters( $amount, $this->currency, $this->order_id, $description );
 
         return $form->getAction() . '?' . http_build_query( $form->getParameters() );
     }
 
+    private function getOrderItemsAsString() {
+        $arr = array();
+        foreach ($this->order->get_items() as $item) {
+            $arr[] = $item['qty'] . "x " . $item['name'];
+        }
+        return implode(", ", $arr);
+    }
 
     /**
+     * @param boolean $acceptCvcRequired
+     *
      * @return string Redirect location
      */
-    public function addCardForm() {
-        $form = $this->formBuilder( $this->createAddCardUrls( 'paymenthighway_add_card_success' ) )
-                     ->generateAddCardParameters();
+    public function addCardForm($acceptCvcRequired) {
+        $form = $this->formBuilder( $this->createAddCardUrls( 'paymenthighway_add_card_success', 'paymenthighway_add_card_failure' ) )
+                     ->generateAddCardParameters("true");
 
+        $this->logger->debug(print_r($form->getParameters(), true));
         return $form->getAction() . '?' . http_build_query( $form->getParameters() );
     }
 
