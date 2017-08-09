@@ -175,4 +175,14 @@ class WC_Payment_Highway_Forms {
         return $this->paymentApi->tokenize( $tokenizeId );
     }
 
+    /**
+     * @param $transactionId
+     * @param $amount
+     *
+     * @return \Httpful\Response
+     */
+    public function revertPayment($transactionId, $amount) {
+        return $this->paymentApi->revertTransaction($transactionId, $amount);
+    }
+
 }

@@ -133,6 +133,7 @@ function init_payment_highway_class() {
             $this->method_title       = __( 'Payment Highway', 'wc-payment-highway' );
             $this->method_description = __( 'Allows Credit Card Payments via Payment Highway. Orders are marked as "on-hold" when received.', 'wc-payment-highway' );
             $this->supports           = array(
+                'refunds',
                 'subscriptions',
                 'products',
                 'subscription_cancellation',
@@ -221,17 +222,18 @@ function init_payment_highway_class() {
                 $order    = wc_get_order( $order_id );
                 if ( $forms->verifySignature( $_GET ) ) {
                     $response = $forms->commitPayment( $_GET['sph-transaction-id'], $_GET['sph-amount'], $_GET['sph-currency'] );
-                    $this->handle_payment_response( $response, $order, $_GET['sph-transaction-id'] );
+                    $order->set_transaction_id($_GET['sph-transaction-id']);
+                    $this->handle_payment_response( $response, $order);
                 }
                 $this->redirect_failed_payment( $order, 'Signature mismatch: ' . print_r($_GET, true) );
             }
         }
 
-        private function handle_payment_response( $response, $order, $tx_id ) {
+        private function handle_payment_response( $response, $order) {
             $responseObject = json_decode( $response );
             if ( $responseObject->result->code === 100 ) {
                 $this->logger->info( $response );
-                $order->payment_complete($tx_id);
+                $order->payment_complete();
                 if ( get_current_user_id() !== 0 && ! $this->save_card( $responseObject ) ) {
                     wc_add_notice( __( 'Card could not be saved.', 'wc-payment-highway' ), 'notice' );
                 }
@@ -365,6 +367,38 @@ function init_payment_highway_class() {
             $forms = new WC_Payment_Highway_Forms($this->logger);
             wp_redirect( $forms->addCardForm($this->accept_cvc_required), 303 );
             exit;
+        }
+
+        /**
+         * Refund a charge
+         * @param  int $order_id
+         * @param  float $amount
+         * @return bool
+         */
+        public function process_refund( $order_id, $amount = null, $reason = '' ) {
+
+            if ( ! class_exists( 'WC_Payment_Highway_Forms' ) ) {
+                include( dirname( __FILE__ ) . '/includes/class-forms-payment-highway.php' );
+
+            }
+
+            $order = wc_get_order( $order_id );
+            if ( ! $order || ! $order->get_transaction_id() ) {
+                return false;
+            }
+
+            $phAmount = is_null($amount) ? $amount : ($amount * 100);
+            $this->logger->info("Revert order: $order_id (TX ID: " . $order->get_transaction_id() . ") amount: $amount, ph-amount: $phAmount");
+            $forms = new WC_Payment_Highway_Forms($this->logger);
+            $response = $forms->revertPayment($order->get_transaction_id(), $phAmount);
+            $responseObject = json_decode( $response );
+            if ( $responseObject->result->code === 100 ) {
+                return true;
+            }
+            else {
+                $this->logger->alert("Error while making refund for order $order_id. PH Code:" . $responseObject->result->code . ", ". $responseObject->result->message);
+                return false;
+            }
         }
 
     }
