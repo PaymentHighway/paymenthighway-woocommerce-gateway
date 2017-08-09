@@ -104,7 +104,7 @@ add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'wc_payment_hi
 
 function init_payment_highway_class() {
 
-    class WC_Gateway_Payment_Highway extends WC_Payment_Gateway {
+    class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
 
         public $id;
         public $name;
@@ -126,6 +126,7 @@ function init_payment_highway_class() {
             }
 
             $this->check_subscriptions_plugin();
+            $this->load_classes();
 
             $this->id                 = 'payment_highway';
             $this->name               = 'Payment Highway';
@@ -188,10 +189,34 @@ function init_payment_highway_class() {
             return false;
         }
 
-        public function check_subscriptions_plugin() {
+        private function check_subscriptions_plugin() {
             if ( class_exists( 'WC_Subscriptions_Order' ) && function_exists( 'wcs_create_renewal_order' ) ) {
                 include_once( dirname( __FILE__ ) . '/includes/wc-paymenthighway-subscriptions.php' );
             }
+        }
+
+        private function load_classes() {
+            if ( ! class_exists( 'WC_Payment_Highway_Forms' ) ) {
+                include( dirname( __FILE__ ) . '/includes/class-forms-payment-highway.php' );
+            }
+        }
+
+        /**
+         * @override
+         *
+         * Override form, so it wont print credit card form
+         */
+        public function form() {
+            return '';
+        }
+
+        /**
+         * @override
+         *
+         * Override , so it wont print save to account checkbox
+         */
+        public function save_payment_method_checkbox() {
+            return '';
         }
 
         /**
@@ -214,9 +239,6 @@ function init_payment_highway_class() {
             global $woocommerce;
 
             if ( isset( $_GET[ __FUNCTION__  ] ) ) {
-                if ( ! class_exists( 'WC_Payment_Highway_Forms' ) ) {
-                    include( dirname( __FILE__ ) . '/includes/class-forms-payment-highway.php' );
-                }
                 $order_id = $_GET['sph-order'];
                 $forms    = new WC_Payment_Highway_Forms($this->logger);
                 $order    = wc_get_order( $order_id );
@@ -277,9 +299,6 @@ function init_payment_highway_class() {
         public function paymenthighway_add_card_failure() {
             global $woocommerce;
             if ( isset( $_GET[ __FUNCTION__  ] ) ) {
-                if ( ! class_exists( 'WC_Payment_Highway_Forms' ) ) {
-                    include( dirname( __FILE__ ) . '/includes/class-forms-payment-highway.php' );
-                }
                 wc_add_notice( __( 'Card  could not be saved.', 'wc-payment-highway' ), 'error' );
                 $this->logger->alert(print_r($_GET, true));
             }
@@ -289,10 +308,6 @@ function init_payment_highway_class() {
             global $woocommerce;
 
             if ( isset( $_GET[ __FUNCTION__  ] ) ) {
-                if ( ! class_exists( 'WC_Payment_Highway_Forms' ) ) {
-                    include( dirname( __FILE__ ) . '/includes/class-forms-payment-highway.php' );
-                }
-
                 $forms = new WC_Payment_Highway_Forms($this->logger);
                 if ( $forms->verifySignature( $_GET ) ) {
                     $response = $forms->tokenizeCard( $_GET['sph-tokenization-id'] );
@@ -334,19 +349,55 @@ function init_payment_highway_class() {
          */
         public function process_payment( $order_id ) {
             global $woocommerce;
+            if ( isset( $_POST['wc-' . $this->id . '-payment-token'] ) &&  $_POST['wc-' . $this->id . '-payment-token'] !== 'new' ) {
+                return $this->process_payment_with_token($order_id);
+            }
             $order = new WC_Order( $order_id );
             $order->update_status( 'pending payment', __( 'Payment Highway payment failed', 'wc-payment-highway' ) );
 
             wc_reduce_stock_levels( $order_id );
 
-            if ( ! class_exists( 'WC_Payment_Highway_Forms' ) ) {
-                include( dirname( __FILE__ ) . '/includes/class-forms-payment-highway.php' );
-            }
             $forms = new WC_Payment_Highway_Forms($this->logger);
 
             return array(
                 'result'   => 'success',
                 'redirect' => $forms->addCardAndPaymentForm( $order_id )
+            );
+        }
+
+        private function process_payment_with_token($order_id) {
+            global $woocommerce;
+            $forms = new WC_Payment_Highway_Forms($this->logger);
+
+            $token_id = wc_clean( $_POST['wc-' . $this->id . '-payment-token'] );
+            $token    = WC_Payment_Tokens::get( $token_id );
+
+            $order = new WC_Order( $order_id );
+            $order->update_status( 'pending payment', __( 'Payment Highway payment failed', 'wc-payment-highway' ) );
+
+            wc_reduce_stock_levels( $order_id );
+
+
+
+            $amount      = intval( $order->get_total() * 100 );
+
+            $forms = new WC_Payment_Highway_Forms($this->logger);
+            $response = $forms->payWithToken($token->get_token(), $order, $amount, get_woocommerce_currency());
+            $responseObject = json_decode( $response );
+
+            if ( $responseObject->result->code !== 100 ) {
+                $this->logger->alert("Error while making debit transaction with token. Order: $order_id, PH Code: " . $responseObject->result->code . ", " . $responseObject->result->message);
+                return array(
+                    'result'   => 'failure',
+                    'redirect' => $woocommerce->cart->get_checkout_url()
+                );
+            }
+
+            $order->payment_complete();
+
+            return array(
+                'result'   => 'success',
+                'redirect' => $order->get_checkout_order_received_url()
             );
         }
 
@@ -359,11 +410,6 @@ function init_payment_highway_class() {
          * @access public
          */
         public function add_payment_method() {
-
-            if ( ! class_exists( 'WC_Payment_Highway_Forms' ) ) {
-                include( dirname( __FILE__ ) . '/includes/class-forms-payment-highway.php' );
-            }
-
             $forms = new WC_Payment_Highway_Forms($this->logger);
             wp_redirect( $forms->addCardForm($this->accept_cvc_required), 303 );
             exit;
@@ -371,32 +417,29 @@ function init_payment_highway_class() {
 
         /**
          * Refund a charge
+         *
          * @param  int $order_id
          * @param  float $amount
+         *
          * @return bool
          */
         public function process_refund( $order_id, $amount = null, $reason = '' ) {
-
-            if ( ! class_exists( 'WC_Payment_Highway_Forms' ) ) {
-                include( dirname( __FILE__ ) . '/includes/class-forms-payment-highway.php' );
-
-            }
-
             $order = wc_get_order( $order_id );
             if ( ! $order || ! $order->get_transaction_id() ) {
                 return false;
             }
 
-            $phAmount = is_null($amount) ? $amount : ($amount * 100);
-            $this->logger->info("Revert order: $order_id (TX ID: " . $order->get_transaction_id() . ") amount: $amount, ph-amount: $phAmount");
-            $forms = new WC_Payment_Highway_Forms($this->logger);
-            $response = $forms->revertPayment($order->get_transaction_id(), $phAmount);
+            $phAmount = is_null( $amount ) ? $amount : ( $amount * 100 );
+            $this->logger->info( "Revert order: $order_id (TX ID: " . $order->get_transaction_id() . ") amount: $amount, ph-amount: $phAmount" );
+
+            $forms          = new WC_Payment_Highway_Forms( $this->logger );
+            $response       = $forms->revertPayment( $order->get_transaction_id(), $phAmount );
             $responseObject = json_decode( $response );
             if ( $responseObject->result->code === 100 ) {
                 return true;
-            }
-            else {
-                $this->logger->alert("Error while making refund for order $order_id. PH Code:" . $responseObject->result->code . ", ". $responseObject->result->message);
+            } else {
+                $this->logger->alert( "Error while making refund for order $order_id. PH Code:" . $responseObject->result->code . ", " . $responseObject->result->message );
+
                 return false;
             }
         }

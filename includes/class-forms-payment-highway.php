@@ -5,6 +5,8 @@ require 'vendor/autoload.php';
 use \Solinor\PaymentHighway\FormBuilder;
 use \Solinor\PaymentHighway\PaymentApi;
 use Solinor\PaymentHighway\Security\SecureSigner;
+use \Solinor\PaymentHighway\Model\Token;
+use \Solinor\PaymentHighway\Model\Request\Transaction;
 
 class WC_Payment_Highway_Forms {
     private $order_id;
@@ -183,6 +185,27 @@ class WC_Payment_Highway_Forms {
      */
     public function revertPayment($transactionId, $amount) {
         return $this->paymentApi->revertTransaction($transactionId, $amount);
+    }
+
+    /**
+     * @param $token
+     * @param $order
+     * @param $amount
+     * @param $currency
+     *
+     * @return \Httpful\Response
+     */
+    public function payWithToken($token, $order, $amount, $currency) {
+        $cardToken = new Token($token);
+        $transaction = new Transaction($cardToken, $amount, $currency, true, $order->get_order_number());
+        $initResponse = $this->paymentApi->initTransaction();
+        $initResponseObject = json_decode( $initResponse );
+        if ( $initResponseObject->result->code !== 100 ) {
+            $this->logger->alert("Error while initializing transaction");
+            return $initResponse;
+        }
+        $order->set_transaction_id($initResponseObject->id);
+        return $this->paymentApi->debitTransaction($initResponseObject->id, $transaction);
     }
 
 }
