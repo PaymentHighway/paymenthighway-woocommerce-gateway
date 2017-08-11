@@ -68,7 +68,7 @@ class WC_Payment_Highway_Forms {
         $method     = "GET";
         $successUrl = $this->order->get_checkout_order_received_url();
         if ( $successSuffix !== '' ) {
-            $successUrl .= '&' . $successSuffix;
+            $successUrl = $this->addQueryParameter($successUrl, $successSuffix);
         }
         $failureUrl = $checkout_url;
         $cancelUrl  = $checkout_url;
@@ -88,11 +88,11 @@ class WC_Payment_Highway_Forms {
     private function createAddCardUrls( $successSuffix = '', $failureSuffix = '' ) {
         $successUrl = get_permalink();
         if ( $successSuffix !== '' ) {
-            $successUrl .= '?' . $successSuffix;
+            $successUrl = $this->addQueryParameter($successUrl, $successSuffix);
         }
         $failureUrl = get_permalink();
         if( $failureSuffix !== '' ) {
-            $failureUrl .= '?' . $failureSuffix;
+            $failureUrl = $this->addQueryParameter($failureUrl, $failureSuffix);
         }
         $cancelUrl  = $failureUrl;
 
@@ -101,6 +101,10 @@ class WC_Payment_Highway_Forms {
             'failureUrl' => $failureUrl,
             'cancelUrl'  => $cancelUrl,
         );
+    }
+
+    private function addQueryParameter($baseUrl, $parameter) {
+        return $baseUrl . (strpos($baseUrl, '?') !== false ? '&' : '?') . $parameter;
     }
 
     /**

@@ -117,6 +117,7 @@ function init_payment_highway_class() {
         public $description;
         public $instructions;
         public $accept_cvc_required;
+        public $forms;
 
         public function __construct() {
             global $paymentHighwaySuffixArray;
@@ -149,7 +150,8 @@ function init_payment_highway_class() {
                 'tokenization',
                 'add_payment_method'
             );
-            $this->logger             = wc_get_logger();
+            $this->logger = wc_get_logger();
+            $this->forms = new WC_Payment_Highway_Forms( $this->logger );
 
             $this->init_form_fields();
             $this->init_settings();
@@ -167,6 +169,14 @@ function init_payment_highway_class() {
             foreach ($paymentHighwaySuffixArray as $action) {
                 add_action($action, array($this, $action));
             }
+        }
+        
+        public function get_id() {
+            return $this->id;
+        } 
+        
+        public function get_forms() {
+            return $this->forms;
         }
 
         static function check_environment() {
@@ -240,10 +250,9 @@ function init_payment_highway_class() {
 
             if ( isset( $_GET[ __FUNCTION__  ] ) ) {
                 $order_id = $_GET['sph-order'];
-                $forms    = new WC_Payment_Highway_Forms($this->logger);
                 $order    = wc_get_order( $order_id );
-                if ( $forms->verifySignature( $_GET ) ) {
-                    $response = $forms->commitPayment( $_GET['sph-transaction-id'], $_GET['sph-amount'], $_GET['sph-currency'] );
+                if ( $this->forms->verifySignature( $_GET ) ) {
+                    $response = $this->forms->commitPayment( $_GET['sph-transaction-id'], $_GET['sph-amount'], $_GET['sph-currency'] );
                     $order->set_transaction_id($_GET['sph-transaction-id']);
                     $this->handle_payment_response( $response, $order);
                 }
@@ -308,9 +317,8 @@ function init_payment_highway_class() {
             global $woocommerce;
 
             if ( isset( $_GET[ __FUNCTION__  ] ) ) {
-                $forms = new WC_Payment_Highway_Forms($this->logger);
-                if ( $forms->verifySignature( $_GET ) ) {
-                    $response = $forms->tokenizeCard( $_GET['sph-tokenization-id'] );
+                if ( $this->forms->verifySignature( $_GET ) ) {
+                    $response = $this->forms->tokenizeCard( $_GET['sph-tokenization-id'] );
                     $this->logger->info( $response );
                     $this->handle_add_card_response($response);
                     $this->redirect_add_card( '', $response );
@@ -347,8 +355,15 @@ function init_payment_highway_class() {
          *
          * @return array
          */
-        public function process_payment( $order_id ) {
+        public function process_payment( $order_id, $must_be_logged_in = false ) {
             global $woocommerce;
+            if($must_be_logged_in && get_current_user_id() !== 0) {
+                wc_add_notice( __( 'You must be logged in.', 'wc-payment-highway' ), 'error' );
+                return array(
+                    'result'   => 'fail',
+                    'redirect' => $woocommerce->cart->get_checkout_url()
+                );
+            }
             if ( isset( $_POST['wc-' . $this->id . '-payment-token'] ) &&  $_POST['wc-' . $this->id . '-payment-token'] !== 'new' ) {
                 return $this->process_payment_with_token($order_id);
             }
@@ -357,17 +372,14 @@ function init_payment_highway_class() {
 
             wc_reduce_stock_levels( $order_id );
 
-            $forms = new WC_Payment_Highway_Forms($this->logger);
-
             return array(
                 'result'   => 'success',
-                'redirect' => $forms->addCardAndPaymentForm( $order_id )
+                'redirect' => $this->forms->addCardAndPaymentForm( $order_id )
             );
         }
 
         private function process_payment_with_token($order_id) {
             global $woocommerce;
-            $forms = new WC_Payment_Highway_Forms($this->logger);
 
             $token_id = wc_clean( $_POST['wc-' . $this->id . '-payment-token'] );
             $token    = WC_Payment_Tokens::get( $token_id );
@@ -376,19 +388,17 @@ function init_payment_highway_class() {
             $order->update_status( 'pending payment', __( 'Payment Highway payment failed', 'wc-payment-highway' ) );
 
             wc_reduce_stock_levels( $order_id );
-
-
-
+            
             $amount      = intval( $order->get_total() * 100 );
 
-            $forms = new WC_Payment_Highway_Forms($this->logger);
-            $response = $forms->payWithToken($token->get_token(), $order, $amount, get_woocommerce_currency());
+            $this->forms = new WC_Payment_Highway_Forms($this->logger);
+            $response = $this->forms->payWithToken($token->get_token(), $order, $amount, get_woocommerce_currency());
             $responseObject = json_decode( $response );
 
             if ( $responseObject->result->code !== 100 ) {
                 $this->logger->alert("Error while making debit transaction with token. Order: $order_id, PH Code: " . $responseObject->result->code . ", " . $responseObject->result->message);
                 return array(
-                    'result'   => 'failure',
+                    'result'   => 'fail',
                     'redirect' => $woocommerce->cart->get_checkout_url()
                 );
             }
@@ -410,8 +420,7 @@ function init_payment_highway_class() {
          * @access public
          */
         public function add_payment_method() {
-            $forms = new WC_Payment_Highway_Forms($this->logger);
-            wp_redirect( $forms->addCardForm($this->accept_cvc_required), 303 );
+            wp_redirect( $this->forms->addCardForm($this->accept_cvc_required), 303 );
             exit;
         }
 
@@ -432,8 +441,7 @@ function init_payment_highway_class() {
             $phAmount = is_null( $amount ) ? $amount : ( $amount * 100 );
             $this->logger->info( "Revert order: $order_id (TX ID: " . $order->get_transaction_id() . ") amount: $amount, ph-amount: $phAmount" );
 
-            $forms          = new WC_Payment_Highway_Forms( $this->logger );
-            $response       = $forms->revertPayment( $order->get_transaction_id(), $phAmount );
+            $response = $this->forms->revertPayment( $order->get_transaction_id(), $phAmount );
             $responseObject = json_decode( $response );
             if ( $responseObject->result->code === 100 ) {
                 return true;
