@@ -61,6 +61,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
             $this,
             'process_admin_options'
         ) );
+        add_action('woocommerce_email_before_order_table', array($this, 'email_instructions'), 10, 3);
 
         foreach ( $paymentHighwaySuffixArray as $action ) {
             add_action( $action, array( $this, $action ) );
@@ -183,7 +184,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
     private function save_card( $responseObject ) {
         $returnValue = false;
         if ( $responseObject->card->cvc_required === "no" || $this->accept_cvc_required ) {
-            if ( $this->isTokenAlreadySaved( $responseObject->token ) ) {
+            if ( $this->isTokenAlreadySaved( $responseObject->card_token ) ) {
                 return true;
             }
             $token = new WC_Payment_Token_CC();
@@ -366,6 +367,21 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
             $this->logger->alert( "Error while making refund for order $order_id. PH Code:" . $responseObject->result->code . ", " . $responseObject->result->message );
 
             return false;
+        }
+    }
+
+    /**
+     * Add content to the WC emails.
+     *
+     * @access public
+     * @param WC_Order $order
+     * @param bool $sent_to_admin
+     * @param bool $plain_text
+     */
+    public function email_instructions( $order, $sent_to_admin, $plain_text = false ) {
+
+        if ( $this->instructions && ! $sent_to_admin && $this->id === $order->payment_method && $order->has_status( 'on-hold' ) ) {
+            echo wpautop( wptexturize( $this->instructions ) ) . PHP_EOL;
         }
     }
 
