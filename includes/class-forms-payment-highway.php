@@ -20,7 +20,6 @@ class WC_Payment_Highway_Forms {
     private $currency;
     private $serviceUrl;
     private $language;
-    private $debug;
     private $secureSigner;
     private $paymentApi;
     private $logger;
@@ -39,7 +38,6 @@ class WC_Payment_Highway_Forms {
         $this->currency        = get_woocommerce_currency();
         $this->serviceUrl      = $this->options['sph_url'];
         $this->language        = $this->options['sph_locale'];
-        $this->debug           = ( $this->options['sph_debug'] === 'yes' ? 1 : 0 );
         $this->secureSigner    = new SecureSigner( $this->signatureKeyId, $this->signatureSecret );
         $this->paymentApi      = new PaymentApi( $this->serviceUrl, $this->signatureKeyId, $this->signatureSecret, $this->account, $this->merchant );
     }
@@ -142,7 +140,6 @@ class WC_Payment_Highway_Forms {
         $form = $this->formBuilder( $this->createAddCardUrls( 'paymenthighway_add_card_success', 'paymenthighway_add_card_failure' ) )
                      ->generateAddCardParameters("true");
 
-        $this->logger->debug(print_r($form->getParameters(), true));
         return $form->getAction() . '?' . http_build_query( $form->getParameters() );
     }
 

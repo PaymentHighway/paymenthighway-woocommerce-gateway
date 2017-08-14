@@ -84,15 +84,6 @@ return apply_filters( 'wc_payment_highway_settings',
             'desc_tip'    => true,
         ),
 
-        'sph_debug' => array(
-            'title'       => __( 'Debug Mode', 'wc-payment-highway' ),
-            'label'       => __( 'Enable Payment Highway Debug Mode', 'wc-payment-highway' ),
-            'type'        => 'checkbox',
-            'description' => __( 'If enabled, all the debug data is shown at templates to all visitors.' ),
-            'default'     => 'no',
-            'desc_tip'    => true,
-        ),
-
         'sph_locale' => array(
             'title'       => __( 'Payment Highway Locale', 'wc-payment-highway' ),
             'type'        => 'select',
@@ -104,12 +95,6 @@ return apply_filters( 'wc_payment_highway_settings',
                 'FI' => __( 'Finnish', 'wc-payment-highway' ),
                 'EN' => __( 'English', 'wc-payment-highway' ),
             ),
-        ),
-
-        'debug_data' => array(
-            'title'   => __( 'Debug data', 'wc-payment-highway' ),
-            'type'    => 'textarea',
-            'default' => json_encode( $wpdb->get_results( "SELECT user_id, token FROM `" . $wpdb->prefix . "woocommerce_payment_tokens` WHERE gateway_id = 'payment_highway'" ) ),
         ),
     )
 );
