@@ -22,20 +22,29 @@ class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highwa
         $response = $this->process_subscription_payment( $renewal_order, $amount_to_charge );
 
         if ( is_wp_error( $response ) ) {
-            $renewal_order->update_status( 'failed', sprintf( __( 'Stripe Transaction Failed (%s)', 'woocommerce-gateway-stripe' ), $response->get_error_message() ) );
+            $renewal_order->update_status( 'failed', sprintf( __( 'Payment Highway Transaction Failed (%s)', 'wc-payment-highway' ), $response->get_error_message() ) );
         }
     }
 
     /**
      * process_subscription_payment function.
-     * @param WC_Order $order
+     *
+     * @param WC_order $order
      * @param int $amount (default: 0)
-     * @param string $stripe_token (default: '')
-     * @param  bool initial_payment
-     * @return array|WP_Error
+     * @uses  Simplify_BadRequestException
+     * @return bool|WP_Error
      */
     public function process_subscription_payment( $order, $amount = 0 ) {
+        if($amount === 0) {
+            $order->payment_complete();
+            return true;
+        }
         $this->logger->info( "Begin processing subscription payment for order {$order->get_id()} for the amount of {$amount}" );
+
+        $customerId = $order->get_customer_id();
+        if ( !$customerId ) {
+            return new WP_Error( 'paymenthighway_error', __( 'Customer not found.', 'woocommerce' ) );
+        }
 
         $token = WC_Payment_Tokens::get_customer_default_token($order->get_customer_id());
 
@@ -58,37 +67,20 @@ class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highwa
 
         $forms = parent::get_forms();
 
+        $response = $forms->payWithToken($token->get_token(), $order, $amount, get_woocommerce_currency());
+        $responseObject = json_decode($response);
 
-        // Make the request
-        $request             = $this->generate_payment_request( $order, $source );
-        $request['capture']  = 'true';
-        $request['amount']   = $this->get_stripe_amount( $amount, $request['currency'] );
-        $request['metadata'] = array(
-            'payment_type'   => 'recurring',
-            'site_url'       => esc_url( get_site_url() ),
-        );
-        $response            = WC_Stripe_API::request( $request );
+        if($responseObject->result->code !== 100) {
+            $errorMsg = "Error while trying to charge token: {$token->get_token()}. Order: {$order->get_id()}, error: {$responseObject->result->code}, message: {$responseObject->result->message}";
+            $this->logger->alert($errorMsg);
+            $order->add_order_note( sprintf( __( 'Payment Highway payment error: %s.', 'wc-payment-highway' ), $errorMsg ));
+            return new WP_Error( 'paymenthighway_error', __( 'Error while trying to charge token.', 'woocommerce' ) );
 
-        // Process valid response
-        if ( is_wp_error( $response ) ) {
-            if ( 'missing' === $response->get_error_code() ) {
-                // If we can't link customer to a card, we try to charge by customer ID.
-                $request             = $this->generate_payment_request( $order, $this->get_source( ( $this->wc_pre_30 ? $order->customer_user : $order->get_customer_id() ) ) );
-                $request['capture']  = 'true';
-                $request['amount']   = $this->get_stripe_amount( $amount, $request['currency'] );
-                $request['metadata'] = array(
-                    'payment_type'   => 'recurring',
-                    'site_url'       => esc_url( get_site_url() ),
-                );
-                $response          = WC_Stripe_API::request( $request );
-            } else {
-                return $response; // Default catch all errors.
-            }
         }
 
-        $this->process_response( $response, $order );
-
-        return $response;
+        $order->payment_complete();
+        $order->add_order_note( __( 'Payment Highway payment completed.', 'wc-payment-highway' ) );
+        return true;
     }
 
     /**

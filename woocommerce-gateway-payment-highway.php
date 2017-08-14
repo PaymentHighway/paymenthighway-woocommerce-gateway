@@ -286,7 +286,10 @@ function init_payment_highway_class() {
 
         private function save_card( $responseObject ) {
             $returnValue = false;
-            if ( $responseObject->card->cvc_required === "no" || $this->accept_cvc_required ) {
+            if ( $responseObject->card->cvc_required === "no" || $this->accept_cvc_required) {
+                if($this->isTokenAlreadySaved($responseObject->token)) {
+                    return true;
+                }
                 $token = new WC_Payment_Token_CC();
                 // set
                 $token->set_token( $responseObject->card_token );
@@ -303,6 +306,18 @@ function init_payment_highway_class() {
             }
 
             return $returnValue;
+        }
+        private function isTokenAlreadySaved($token){
+            $tokens = WC_Payment_Tokens::get_customer_tokens( get_current_user_id(), $this->id );
+            /**
+             * @var WC_Payment_Token_CC $t
+             */
+            foreach ($tokens as $t) {
+                if($t->get_token() === $token){
+                    return true;
+                }
+            }
+            return false;
         }
 
         public function paymenthighway_add_card_failure() {
@@ -352,6 +367,8 @@ function init_payment_highway_class() {
          * Process the payment and return the result
          *
          * @param int $order_id
+         *
+         * @param bool $must_be_logged_in
          *
          * @return array
          */

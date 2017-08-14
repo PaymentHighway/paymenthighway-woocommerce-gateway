@@ -193,7 +193,7 @@ class WC_Payment_Highway_Forms {
 
     /**
      * @param $token
-     * @param $order
+     * @param WC_Order $order
      * @param $amount
      * @param $currency
      *
