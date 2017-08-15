@@ -2,34 +2,24 @@
 
 class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
 
-    public $id;
-    public $name;
-    public $has_fields;
-    public $method_title;
-    public $method_description;
-    public $supports;
     public $logger;
-    public $title;
-    public $description;
-    public $instructions;
     public $accept_cvc_required;
     public $forms;
+    public $subscriptions;
 
     public function __construct() {
         global $paymentHighwaySuffixArray;
+        
+        $this->subscriptions = false;
+        $this->logger  = wc_get_logger();
 
-        if ( self::check_environment() ) {
-            return;
-        }
-
-        $this->check_subscriptions_plugin();
         $this->load_classes();
 
         $this->id                 = 'payment_highway';
         $this->name               = 'Payment Highway';
         $this->has_fields         = false;
         $this->method_title       = __( 'Payment Highway', 'wc-payment-highway' );
-        $this->method_description = __( 'Allows Credit Card Payments via Payment Highway. Orders are marked as "on-hold" when received.', 'wc-payment-highway' );
+        $this->method_description = __( 'Allows Credit Card Payments via Payment Highway.', 'wc-payment-highway' );
         $this->supports           = array(
             'refunds',
             'subscriptions',
@@ -46,7 +36,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
             'tokenization',
             'add_payment_method'
         );
-        $this->logger             = wc_get_logger();
+
         $this->forms              = new WC_Payment_Highway_Forms( $this->logger );
 
         $this->init_form_fields();
@@ -61,12 +51,12 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
             $this,
             'process_admin_options'
         ) );
-        add_action('woocommerce_email_before_order_table', array($this, 'email_instructions'), 10, 3);
 
         foreach ( $paymentHighwaySuffixArray as $action ) {
             add_action( $action, array( $this, $action ) );
         }
     }
+
 
     public function get_id() {
         return $this->id;
@@ -76,37 +66,14 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
         return $this->forms;
     }
 
-    static function check_environment() {
-        if ( version_compare( phpversion(), WC_PAYMENTHIGHWAY_MIN_PHP_VER, '<' ) ) {
-            $message = __( ' The minimum PHP version required for Payment Highway is %1$s. You are running %2$s.', 'wc-payment-highway' );
 
-            return sprintf( $message, WC_PAYMENTHIGHWAY_MIN_PHP_VER, phpversion() );
-        }
-
-        if ( ! defined( 'WC_VERSION' ) ) {
-            return __( 'WooCommerce needs to be activated.', 'wc-payment-highway' );
-        }
-
-        if ( version_compare( WC_VERSION, WC_PAYMENTHIGHWAY_MIN_WC_VER, '<' ) ) {
-            $message = __( 'The minimum WooCommerce version required for Payment Highway is %1$s. You are running %2$s.', 'wc-payment-highway' );
-
-            return sprintf( $message, WC_PAYMENTHIGHWAY_MIN_WC_VER, WC_VERSION );
-        }
-
-        return false;
-    }
-
-    private function check_subscriptions_plugin() {
-        if ( class_exists( 'WC_Subscriptions_Order' ) && function_exists( 'wcs_create_renewal_order' ) ) {
-            include_once( dirname( __FILE__ ) . '/wc-paymenthighway-subscriptions.php' );
-        }
-    }
 
     private function load_classes() {
         if ( ! class_exists( 'WC_Payment_Highway_Forms' ) ) {
             include( dirname( __FILE__ ) . '/class-forms-payment-highway.php' );
         }
     }
+
 
     /**
      * @override
@@ -379,21 +346,6 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
             $this->logger->alert( "Error while making refund for order $order_id. PH Code:" . $responseObject->result->code . ", " . $responseObject->result->message );
 
             return false;
-        }
-    }
-
-    /**
-     * Add content to the WC emails.
-     *
-     * @access public
-     * @param WC_Order $order
-     * @param bool $sent_to_admin
-     * @param bool $plain_text
-     */
-    public function email_instructions( $order, $sent_to_admin, $plain_text = false ) {
-
-        if ( $this->instructions && ! $sent_to_admin && $this->id === $order->payment_method && $order->has_status( 'on-hold' ) ) {
-            echo wpautop( wptexturize( $this->instructions ) ) . PHP_EOL;
         }
     }
 

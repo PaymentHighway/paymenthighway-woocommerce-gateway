@@ -19,6 +19,7 @@ class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highwa
      * @param $renewal_order WC_Order A WC_Order object created to record the renewal payment.
      */
     public function scheduled_subscription_payment( $amount_to_charge, $renewal_order ) {
+        $this->logger->debug("foobar asd asdf");
         $response = $this->process_subscription_payment( $renewal_order, $amount_to_charge );
 
         if ( is_wp_error( $response ) ) {

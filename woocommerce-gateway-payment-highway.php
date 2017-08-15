@@ -28,8 +28,6 @@ if ( ! in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins',
     return;
 }
 
-add_action( 'plugins_loaded', 'init_payment_highway_class' );
-
 
 /**
  * SETTINGS
@@ -54,43 +52,6 @@ function check_for_payment_highway_response() {
 
 add_action( 'init', 'check_for_payment_highway_response' );
 
-/**
- * Add the gateway to WC Available Gateways
- *
- * @since 1.0.0
- *
- * @param array $methods all available WC gateways
- *
- * @return array
- */
-function add_payment_highway_to_gateways( $methods ) {
-    $methods[] = 'WC_Gateway_Payment_Highway';
-
-    return $methods;
-}
-
-add_filter( 'woocommerce_payment_gateways', 'add_payment_highway_to_gateways' );
-
-/**
- * Adds plugin page links
- *
- * @since 1.0.0
- *
- * @param array $links all plugin links
- *
- * @return array $links all plugin links + our custom links (i.e., "Settings")
- */
-function wc_payment_highway_plugin_links( $links ) {
-    $plugin_links = array(
-        '<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=payment_highway' ) . '">' . __( 'Settings', 'wc-payment-highway' ) . '</a>',
-        '<a href="https://paymenthighway.fi/dev/">' . __( 'Docs', 'wc-payment-highway' ) . '</a>'
-    );
-
-    return array_merge( $plugin_links, $links );
-}
-
-add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'wc_payment_highway_plugin_links' );
-
 
 /**
  * WooCommerce Payment Highway
@@ -102,6 +63,157 @@ add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'wc_payment_hi
  * @author        Payment Highway
  */
 
-function init_payment_highway_class() {
-    include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-payment-highway.php' );
-}
+if ( ! class_exists( 'WC_PaymentHighway' ) ) :
+    class WC_PaymentHighway {
+        /**
+         *  Singleton The reference the *Singleton* instance of this class
+         */
+        private static $instance;
+
+        /**
+         *  Reference to logging class.
+         */
+        private static $log;
+
+        /**
+         * Returns the *Singleton* instance of this class.
+         *
+         * @return WC_PaymentHighway The *Singleton* instance.
+         */
+        public static function get_instance() {
+            if ( null === self::$instance ) {
+                self::$instance = new self();
+            }
+            return self::$instance;
+        }
+
+        /**
+         * Private clone method to prevent cloning of the instance of the
+         * *Singleton* instance.
+         *
+         * @return void
+         */
+        private function __clone() {}
+
+        /**
+         * Private unserialize method to prevent unserializing of the *Singleton*
+         * instance.
+         *
+         * @return void
+         */
+        private function __wakeup() {}
+
+        /**
+         * Flag to indicate whether or not we need to load code for / support subscriptions.
+         *
+         * @var bool
+         */
+        private $subscription_support_enabled = false;
+
+        /**
+         * Protected constructor to prevent creating a new instance of the
+         * *Singleton* via the `new` operator from outside of this class.
+         */
+        protected function __construct() {
+            add_action( 'plugins_loaded', array( $this, 'init' ) );
+        }
+        /**
+         * Init the plugin after plugins_loaded so environment variables are set.
+         */
+        public function init() {
+            // Don't hook anything else in the plugin if we're in an incompatible environment
+            if ( self::check_environment() ) {
+                return;
+            }
+
+
+            // Init the gateway itself
+            $this->init_gateways();
+
+            add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
+        }
+
+        static function check_environment() {
+            if ( version_compare( phpversion(), WC_PAYMENTHIGHWAY_MIN_PHP_VER, '<' ) ) {
+                $message = __( ' The minimum PHP version required for Payment Highway is %1$s. You are running %2$s.', 'wc-payment-highway' );
+
+                return sprintf( $message, WC_PAYMENTHIGHWAY_MIN_PHP_VER, phpversion() );
+            }
+
+            if ( ! defined( 'WC_VERSION' ) ) {
+                return __( 'WooCommerce needs to be activated.', 'wc-payment-highway' );
+            }
+
+            if ( version_compare( WC_VERSION, WC_PAYMENTHIGHWAY_MIN_WC_VER, '<' ) ) {
+                $message = __( 'The minimum WooCommerce version required for Payment Highway is %1$s. You are running %2$s.', 'wc-payment-highway' );
+
+                return sprintf( $message, WC_PAYMENTHIGHWAY_MIN_WC_VER, WC_VERSION );
+            }
+
+            return false;
+        }
+
+        /**
+         * Initialize the gateway. Called very early - in the context of the plugins_loaded action
+         *
+         * @since 1.0.0
+         */
+        public function init_gateways() {
+            if ( class_exists( 'WC_Subscriptions_Order' ) && function_exists( 'wcs_create_renewal_order' ) ) {
+                $this->subscription_support_enabled = true;
+                include_once( dirname( __FILE__ ) . '/includes/wc-paymenthighway-subscriptions.php' );
+            }
+
+            include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-payment-highway.php' );
+
+            load_plugin_textdomain( 'wc-payment-highway', false, plugin_basename( dirname( __FILE__ ) ) . '/languages' );
+            add_filter( 'woocommerce_payment_gateways', array( $this, 'add_gateways' ) );
+
+        }
+
+        /**
+         * Add the gateway to WC Available Gateways
+         *
+         * @since 1.0.0
+         *
+         * @param array $methods all available WC gateways
+         *
+         * @return array
+         */
+        public function add_gateways( $methods ) {
+            if ( $this->subscription_support_enabled ) {
+                $methods[] = 'WC_Gateway_Payment_Highway_Subscriptions';
+            } else {
+                $methods[] = 'WC_Gateway_Payment_Highway';
+            }
+            self::log(print_r($methods, true));
+            return $methods;
+        }
+
+        /**
+         * Adds plugin page links
+         *
+         * @since 1.0.0
+         *
+         * @param array $links all plugin links
+         *
+         * @return array $links all plugin links + our custom links (i.e., "Settings")
+         */
+        public function wc_payment_highway_plugin_links( $links ) {
+            $plugin_links = array(
+                '<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=payment_highway' ) . '">' . __( 'Settings', 'wc-payment-highway' ) . '</a>',
+                '<a href="https://paymenthighway.fi/dev/">' . __( 'Docs', 'wc-payment-highway' ) . '</a>'
+            );
+
+            return array_merge( $plugin_links, $links );
+        }
+
+        public static function log( $message ) {
+            if ( empty( self::$log ) ) {
+                self::$log = new WC_Logger();
+            }
+
+            self::$log->add( 'woocommerce-gateway-payment-highway', $message );
+        }
+    }
+endif;

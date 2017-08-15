@@ -1,0 +1,261 @@
+# WordPress Blank Pot
+# Copyright (C) 2014 ...
+# This file is distributed under the GNU General Public License v2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Payment Highway Woocommerce gateway v0.1.0\n"
+"POT-Creation-Date: 2017-08-15 14:18+0300\n"
+"PO-Revision-Date: \n"
+"Language-Team: Payment Highway <support@paymenthighway.fi>\n"
+"Report-Msgid-Bugs-To: Translator Name <translations@example.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Textdomain-Support: yesX-Generator: Poedit 1.6.4\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: __;_e;esc_html_e;esc_html_x:1,2c;esc_html__;"
+"esc_attr_e;esc_attr_x:1,2c;esc_attr__;_ex:1,2c;_nx:4c,1,2;_nx_noop:4c,1,2;"
+"_x:1,2c;_n:1,2;_n_noop:1,2;__ngettext:1,2;__ngettext_noop:1,2;_c,_nc:4c,1,2\n"
+"X-Poedit-Basepath: ..\n"
+"X-Generator: Poedit 2.0.3\n"
+"Last-Translator: \n"
+"Language: fi_FI\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: includes/class-wc-gateway-payment-highway.php:31
+#: includes/settings-payment-highway.php:28
+msgid "Payment Highway"
+msgstr ""
+
+#: includes/class-wc-gateway-payment-highway.php:32
+msgid ""
+"Allows Credit Card Payments via Payment Highway. Orders are marked as \"on-"
+"hold\" when received."
+msgstr ""
+
+#: includes/class-wc-gateway-payment-highway.php:81
+#, php-format
+msgid ""
+" The minimum PHP version required for Payment Highway is %1$s. You are "
+"running %2$s."
+msgstr ""
+
+#: includes/class-wc-gateway-payment-highway.php:87
+msgid "WooCommerce needs to be activated."
+msgstr ""
+
+#: includes/class-wc-gateway-payment-highway.php:91
+#, php-format
+msgid ""
+"The minimum WooCommerce version required for Payment Highway is %1$s. You "
+"are running %2$s."
+msgstr ""
+
+#: includes/class-wc-gateway-payment-highway.php:167
+#: includes/class-wc-gateway-payment-highway.php:232
+msgid "Card could not be saved."
+msgstr "Korttia ei voitu tallentaa."
+
+#: includes/class-wc-gateway-payment-highway.php:179
+#: includes/class-wc-gateway-payment-highway.php:327
+msgid "Payment rejected, please try again."
+msgstr "Maksu hylätty, kokeile uudelleen."
+
+#: includes/class-wc-gateway-payment-highway.php:180
+msgid "Payment Highway payment rejected"
+msgstr ""
+
+#: includes/class-wc-gateway-payment-highway.php:183
+msgid "Payment failed, please try again."
+msgstr "Maksu epäonnistui, kokeile uudelleen."
+
+#: includes/class-wc-gateway-payment-highway.php:184
+#: includes/class-wc-gateway-payment-highway.php:297
+#: includes/class-wc-gateway-payment-highway.php:314
+msgid "Payment Highway payment failed"
+msgstr ""
+
+#: includes/class-wc-gateway-payment-highway.php:209
+msgid "Card saved."
+msgstr "Kortti tallennettu."
+
+#: includes/class-wc-gateway-payment-highway.php:261
+msgid ""
+"Unfortunately the card does not support payments without CVC2/CVV2 security "
+"code."
+msgstr "Kortti ei valitettavasti tue maksamista ilman CVC2/CVV2 turvalukua."
+
+#: includes/class-wc-gateway-payment-highway.php:268
+msgid "Card could not be saved. "
+msgstr "Korttia ei voitu tallentaa."
+
+#: includes/class-wc-gateway-payment-highway.php:286
+msgid "You must be logged in."
+msgstr "Sinun täytyy olla kirjautuneena sisään."
+
+#: includes/settings-payment-highway.php:11
+msgid "Enable/Disable"
+msgstr ""
+
+#: includes/settings-payment-highway.php:13
+msgid "Enable Payment Highway"
+msgstr ""
+
+#: includes/settings-payment-highway.php:18
+msgid "Accept CVC required cards"
+msgstr ""
+
+#: includes/settings-payment-highway.php:20
+msgid "Users can save cards that requires CVC for every purchase."
+msgstr ""
+
+#: includes/settings-payment-highway.php:25
+msgid "Title"
+msgstr ""
+
+#: includes/settings-payment-highway.php:27
+#: includes/settings-payment-highway.php:34
+#: includes/settings-payment-highway.php:42
+#: includes/settings-payment-highway.php:58
+#: includes/settings-payment-highway.php:66
+msgid ""
+"This controls the title for the payment method the customer sees during "
+"checkout."
+msgstr ""
+
+#: includes/settings-payment-highway.php:32
+msgid "SPH Account"
+msgstr ""
+
+#: includes/settings-payment-highway.php:35
+msgid "test"
+msgstr ""
+
+#: includes/settings-payment-highway.php:40
+msgid "SPH Merchant"
+msgstr ""
+
+#: includes/settings-payment-highway.php:43
+msgid "test_merchantId"
+msgstr ""
+
+#: includes/settings-payment-highway.php:48
+msgid "SPH Endpoint URL"
+msgstr ""
+
+#: includes/settings-payment-highway.php:50
+msgid "Payment Highway's endoint url address"
+msgstr ""
+
+#: includes/settings-payment-highway.php:51
+msgid "https://v1-hub-staging.sph-test-solinor.com"
+msgstr ""
+
+#: includes/settings-payment-highway.php:56
+msgid "API Key ID"
+msgstr ""
+
+#: includes/settings-payment-highway.php:59
+msgid "testKey"
+msgstr ""
+
+#: includes/settings-payment-highway.php:64
+msgid "API Key Secret"
+msgstr ""
+
+#: includes/settings-payment-highway.php:67
+msgid "testSecret"
+msgstr ""
+
+#: includes/settings-payment-highway.php:72
+msgid "Description"
+msgstr ""
+
+#: includes/settings-payment-highway.php:74
+msgid "Payment method description that the customer will see on your checkout."
+msgstr ""
+
+#: includes/settings-payment-highway.php:75
+msgid "You will be redirected to Payment Highway credit card payment form."
+msgstr "Sinut ohjataan Payment Highwayn maksulomakkeelle."
+
+#: includes/settings-payment-highway.php:80
+msgid "Instructions"
+msgstr ""
+
+#: includes/settings-payment-highway.php:82
+msgid "Instructions that will be added to the thank you page and emails."
+msgstr ""
+
+#: includes/settings-payment-highway.php:88
+msgid "Payment Highway Locale"
+msgstr ""
+
+#: includes/settings-payment-highway.php:91
+msgid ""
+"Language to display in Payment Highway Form. Finnish will be used by default."
+msgstr ""
+
+#: includes/settings-payment-highway.php:95
+msgid "Finnish"
+msgstr "Suomi"
+
+#: includes/settings-payment-highway.php:96
+msgid "English"
+msgstr "Englanti"
+
+#: includes/settings-payment-highway.php:97
+msgid "German"
+msgstr "Saksa"
+
+#: includes/settings-payment-highway.php:98
+msgid "Spanish"
+msgstr "Espanja"
+
+#: includes/settings-payment-highway.php:99
+msgid "French"
+msgstr "Ranska"
+
+#: includes/settings-payment-highway.php:100
+msgid "Russian"
+msgstr "Venäjä"
+
+#: includes/settings-payment-highway.php:101
+msgid "Swedish"
+msgstr "Ruotsi"
+
+#: includes/wc-paymenthighway-subscriptions.php:25
+#, php-format
+msgid "Payment Highway Transaction Failed (%s)"
+msgstr ""
+
+#: includes/wc-paymenthighway-subscriptions.php:46
+msgid "Customer not found."
+msgstr ""
+
+#: includes/wc-paymenthighway-subscriptions.php:77
+#, php-format
+msgid "Payment Highway payment rejected: %s."
+msgstr ""
+
+#: includes/wc-paymenthighway-subscriptions.php:82
+#, php-format
+msgid "Payment Highway payment error: %s."
+msgstr ""
+
+#: includes/wc-paymenthighway-subscriptions.php:86
+msgid "Error while trying to charge token."
+msgstr ""
+
+#: includes/wc-paymenthighway-subscriptions.php:91
+msgid "Payment Highway payment completed."
+msgstr ""
+
+#: woocommerce-gateway-payment-highway.php:85
+msgid "Settings"
+msgstr ""
+
+#: woocommerce-gateway-payment-highway.php:86
+msgid "Docs"
+msgstr ""
