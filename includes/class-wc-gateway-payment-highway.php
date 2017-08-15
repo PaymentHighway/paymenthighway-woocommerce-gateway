@@ -80,7 +80,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
         if ( version_compare( phpversion(), WC_PAYMENTHIGHWAY_MIN_PHP_VER, '<' ) ) {
             $message = __( ' The minimum PHP version required for Payment Highway is %1$s. You are running %2$s.', 'wc-payment-highway' );
 
-            return sprintf( $message, WC_STRIPE_MIN_PHP_VER, phpversion() );
+            return sprintf( $message, WC_PAYMENTHIGHWAY_MIN_PHP_VER, phpversion() );
         }
 
         if ( ! defined( 'WC_VERSION' ) ) {
@@ -152,8 +152,9 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
                 $response = $this->forms->commitPayment( $_GET['sph-transaction-id'], $_GET['sph-amount'], $_GET['sph-currency'] );
                 $order->set_transaction_id( $_GET['sph-transaction-id'] );
                 $this->handle_payment_response( $response, $order );
+            } else {
+                $this->redirect_failed_payment( $order, 'Signature mismatch: ' . print_r( $_GET, true ) );
             }
-            $this->redirect_failed_payment( $order, 'Signature mismatch: ' . print_r( $_GET, true ) );
         }
     }
 
@@ -168,15 +169,21 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
             wp_redirect( $order->get_checkout_order_received_url() );
             exit;
         } else {
-            $this->redirect_failed_payment( $order, $response );
+            $this->redirect_failed_payment( $order, $response, $responseObject );
         }
     }
 
-    private function redirect_failed_payment( $order, $error ) {
+    private function redirect_failed_payment( $order, $error, $responseObject = null ) {
         global $woocommerce;
-        wc_add_notice( __( 'Payment failed, please try again.', 'wc-payment-highway' ), 'error' );
-        $this->logger->alert( $error );
-        $order->update_status( 'failed', __( 'Payment Highway payment failed', 'wc-payment-highway' ) );
+        if(!is_null($responseObject) && $responseObject->result->code === 200) {
+            wc_add_notice( __( 'Payment rejected, please try again.', 'wc-payment-highway' ), 'error' );
+            $order->update_status( 'failed', __( 'Payment Highway payment rejected', 'wc-payment-highway' ) );
+        }
+        else{
+            wc_add_notice( __( 'Payment failed, please try again.', 'wc-payment-highway' ), 'error' );
+            $order->update_status( 'failed', __( 'Payment Highway payment failed', 'wc-payment-highway' ) );
+            $this->logger->alert( $error );
+        }
         wp_redirect( $woocommerce->cart->get_checkout_url() );
         exit;
     }
@@ -222,7 +229,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
     public function paymenthighway_add_card_failure() {
         global $woocommerce;
         if ( isset( $_GET[ __FUNCTION__ ] ) ) {
-            wc_add_notice( __( 'Card  could not be saved.', 'wc-payment-highway' ), 'error' );
+            wc_add_notice( __( 'Card could not be saved.', 'wc-payment-highway' ), 'error' );
             $this->logger->alert( print_r( $_GET, true ) );
         }
     }
@@ -237,7 +244,9 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
                 $this->handle_add_card_response( $response );
                 $this->redirect_add_card( '', $response );
             }
-            $this->redirect_add_card( '', 'Signature mismatch: ' . print_r( $_GET, true ) );
+            else {
+                $this->redirect_add_card( '', 'Signature mismatch: ' . print_r( $_GET, true ) );
+            }
         }
     }
 
@@ -249,7 +258,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
                 wp_redirect( get_permalink( get_option( 'woocommerce_myaccount_page_id' ) ) );
                 exit;
             } else {
-                $this->redirect_add_card( __( 'Card could not be used without cvc.' ), 'Card could not be used without cvc.', 'notice' );
+                $this->redirect_add_card( __( 'Unfortunately the card does not support payments without CVC2/CVV2 security code.' ), 'Card could not be used without cvc.', 'notice' );
             }
         }
     }
@@ -314,6 +323,9 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
 
         if ( $responseObject->result->code !== 100 ) {
             $this->logger->alert( "Error while making debit transaction with token. Order: $order_id, PH Code: " . $responseObject->result->code . ", " . $responseObject->result->message );
+            if($responseObject->result->code === 200) {
+                wc_add_notice( __( 'Payment rejected, please try again.', 'wc-payment-highway' ), 'error' );
+            }
 
             return array(
                 'result'   => 'fail',

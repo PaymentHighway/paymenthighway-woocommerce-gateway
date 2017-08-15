@@ -64,23 +64,51 @@ class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highwa
                 }
             }
         }
+        if($this->checkToken($token)){
+            $forms = parent::get_forms();
 
-        $forms = parent::get_forms();
+            $response = $forms->payWithToken($token->get_token(), $order, $amount, get_woocommerce_currency());
+            $responseObject = json_decode($response);
 
-        $response = $forms->payWithToken($token->get_token(), $order, $amount, get_woocommerce_currency());
-        $responseObject = json_decode($response);
+            if($responseObject->result->code !== 100) {
+                if($responseObject->result->code === 200) {
+                    $errorMsg = "Payment rejected. Token:  {$token->get_token()}. Order: {$order->get_id()}, error: {$responseObject->result->code}, message: {$responseObject->result->message}";
+                    $this->logger->info($errorMsg);
+                    $order->add_order_note( sprintf( __( 'Payment Highway payment rejected: %s.', 'wc-payment-highway' ), $errorMsg ));
+                }
+                else{
+                    $errorMsg = "Error while trying to charge token: {$token->get_token()}. Order: {$order->get_id()}, error: {$responseObject->result->code}, message: {$responseObject->result->message}";
+                    $this->logger->alert($errorMsg);
+                    $order->add_order_note( sprintf( __( 'Payment Highway payment error: %s.', 'wc-payment-highway' ), $errorMsg ));
+                }
 
-        if($responseObject->result->code !== 100) {
-            $errorMsg = "Error while trying to charge token: {$token->get_token()}. Order: {$order->get_id()}, error: {$responseObject->result->code}, message: {$responseObject->result->message}";
-            $this->logger->alert($errorMsg);
-            $order->add_order_note( sprintf( __( 'Payment Highway payment error: %s.', 'wc-payment-highway' ), $errorMsg ));
-            return new WP_Error( 'paymenthighway_error', __( 'Error while trying to charge token.', 'woocommerce' ) );
 
+                return new WP_Error( 'paymenthighway_error', __( 'Error while trying to charge token.', 'woocommerce' ) );
+
+            }
+
+            $order->payment_complete();
+            $order->add_order_note( __( 'Payment Highway payment completed.', 'wc-payment-highway' ) );
+            return true;
         }
+        else {
+            return false;
+        }
+    }
 
-        $order->payment_complete();
-        $order->add_order_note( __( 'Payment Highway payment completed.', 'wc-payment-highway' ) );
-        return true;
+    /**
+     * @param WC_Payment_Token_CC $token
+     * @return boolean
+     */
+    private function checkToken( $token ) {
+        if ( $token->get_gateway_id() !== parent::get_id() ) {
+            return false;
+        } elseif ( $token->get_expiry_year() >= date( "Y" ) && $token->get_expiry_month() >= date( 'm' ) ) {
+            $this->logger->info("Expired token: {$token->get_token()}");
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
