@@ -1,11 +1,24 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
 
+/**
+ * WooCommerce Payment Highway
+ *
+ * @class          WC_Gateway_Payment_Highway
+ * @extends        WC_Payment_Gateway_CC
+ * @package        WooCommerce/Classes/Payment
+ * @author         Payment Highway
+ */
 class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
 
     public $logger;
     public $accept_cvc_required;
     public $forms;
     public $subscriptions;
+    private $accept_diners;
+    private $accept_amex;
 
     public function __construct() {
         global $paymentHighwaySuffixArray;
@@ -13,7 +26,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
         $this->subscriptions = false;
         $this->logger  = wc_get_logger();
 
-        $this->load_classes();
+
 
         $this->id                 = 'payment_highway';
         $this->name               = 'Payment Highway';
@@ -37,20 +50,23 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
             'add_payment_method'
         );
 
-        $this->forms              = new WC_Payment_Highway_Forms( $this->logger );
-
         $this->init_form_fields();
         $this->init_settings();
+
+        $this->load_classes();
+
+        $this->forms = new WC_Payment_Highway_Forms( $this->logger );
+
 
         $this->title               = $this->get_option( 'title' );
         $this->description         = $this->get_option( 'description' );
         $this->instructions        = $this->get_option( 'instructions', $this->description );
         $this->accept_cvc_required = $this->get_option( 'accept_cvc_required' ) === 'yes' ? true : false;
 
-        add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array(
-            $this,
-            'process_admin_options'
-        ) );
+        $this->accept_diners       = $this->get_option('accept_diners') === 'yes' ? true : false;
+        $this->accept_amex         = $this->get_option('accept_amex') === 'yes' ? true : false;
+
+        add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array($this,'process_admin_options') );
 
         foreach ( $paymentHighwaySuffixArray as $action ) {
             add_action( $action, array( $this, $action ) );
@@ -67,10 +83,9 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
     }
 
 
-
     private function load_classes() {
         if ( ! class_exists( 'WC_Payment_Highway_Forms' ) ) {
-            include( dirname( __FILE__ ) . '/class-forms-payment-highway.php' );
+            require_once('class-forms-payment-highway.php' );
         }
     }
 
@@ -97,8 +112,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
      * Initialize Gateway Settings Form Fields
      */
     public function init_form_fields() {
-        global $wpdb;
-        $this->form_fields = include( dirname( __FILE__ ) . '/settings-payment-highway.php' );
+        $this->form_fields = include( 'settings-payment-highway.php' );
     }
 
     public function check_for_payment_highway_response() {
@@ -249,7 +263,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
      */
     public function process_payment( $order_id, $must_be_logged_in = false ) {
         global $woocommerce;
-        if ( $must_be_logged_in && get_current_user_id() !== 0 ) {
+        if ( $must_be_logged_in && get_current_user_id() === 0 ) {
             wc_add_notice( __( 'You must be logged in.', 'wc-payment-highway' ), 'error' );
 
             return array(
@@ -284,7 +298,6 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
 
         $amount = intval( $order->get_total() * 100 );
 
-        $this->forms    = new WC_Payment_Highway_Forms( $this->logger );
         $response       = $this->forms->payWithToken( $token->get_token(), $order, $amount, get_woocommerce_currency() );
         $responseObject = json_decode( $response );
 
@@ -349,4 +362,24 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
         }
     }
 
+    /**
+     * Get gateway icon.
+     *
+     * @access public
+     * @return string
+     */
+    public function get_icon() {
+        $icon  = '<br />';
+        if($this->accept_amex) {
+            $icon .= '<img src="' . WC_HTTPS::force_https_url( WC()->plugin_url() . '/assets/images/icons/credit-cards/amex.svg' ) . '" alt="Amex" width="32" />';
+        }
+        if($this->accept_diners) {
+            $icon .= '<img src="' . WC_HTTPS::force_https_url( WC()->plugin_url() . '/assets/images/icons/credit-cards/diners.svg' ) . '" alt="Diners" width="32" />';
+        }
+        $icon .= '<img src="' . WC_HTTPS::force_https_url( WC()->plugin_url() . '/assets/images/icons/credit-cards/visa.svg' ) . '" alt="Visa" width="32" />';
+        $icon .= '<img src="' . WC_HTTPS::force_https_url( WC()->plugin_url() . '/assets/images/icons/credit-cards/mastercard.svg' ) . '" alt="MasterCard" width="32" />';
+
+
+        return apply_filters( 'woocommerce_gateway_icon', $icon, $this->id );
+    }
 }

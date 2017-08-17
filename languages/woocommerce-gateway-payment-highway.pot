@@ -9,7 +9,7 @@ msgstr ""
 "Woocommerce gateway "
 "v0.1.0\n"
 "POT-Creation-Date: "
-"2017-08-15 14:18+0300\n"
+"2017-08-17 13:03+0300\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Your "
 "Name <you@example.com>\n"
@@ -53,82 +53,55 @@ msgstr ""
 "X-Poedit-"
 "SearchPath-0: .\n"
 
-#: includes/class-wc-gateway-payment-highway.php:31
-#: includes/settings-payment-highway.php:28
+#: includes/class-wc-gateway-payment-highway.php:34
 msgid "Payment Highway"
 msgstr ""
 
-#: includes/class-wc-gateway-payment-highway.php:32
+#: includes/class-wc-gateway-payment-highway.php:35
 msgid ""
 "Allows Credit Card "
 "Payments via Payment "
-"Highway. Orders are "
-"marked as \"on-hold\" "
-"when received."
+"Highway."
 msgstr ""
 
-#: includes/class-wc-gateway-payment-highway.php:81
-#, php-format
-msgid ""
-" The minimum PHP version "
-"required for Payment "
-"Highway is %1$s. You are "
-"running %2$s."
-msgstr ""
-
-#: includes/class-wc-gateway-payment-highway.php:87
-msgid ""
-"WooCommerce needs to be "
-"activated."
-msgstr ""
-
-#: includes/class-wc-gateway-payment-highway.php:91
-#, php-format
-msgid ""
-"The minimum WooCommerce "
-"version required for "
-"Payment Highway is %1$s. "
-"You are running %2$s."
-msgstr ""
-
-#: includes/class-wc-gateway-payment-highway.php:167
-#: includes/class-wc-gateway-payment-highway.php:232
+#: includes/class-wc-gateway-payment-highway.php:148
+#: includes/class-wc-gateway-payment-highway.php:213
 msgid ""
 "Card could not be saved."
 msgstr ""
 
-#: includes/class-wc-gateway-payment-highway.php:179
-#: includes/class-wc-gateway-payment-highway.php:327
+#: includes/class-wc-gateway-payment-highway.php:160
+#: includes/class-wc-gateway-payment-highway.php:307
 msgid ""
 "Payment rejected, please "
 "try again."
 msgstr ""
 
-#: includes/class-wc-gateway-payment-highway.php:180
+#: includes/class-wc-gateway-payment-highway.php:161
 msgid ""
 "Payment Highway payment "
 "rejected"
 msgstr ""
 
-#: includes/class-wc-gateway-payment-highway.php:183
+#: includes/class-wc-gateway-payment-highway.php:164
 msgid ""
 "Payment failed, please "
 "try again."
 msgstr ""
 
-#: includes/class-wc-gateway-payment-highway.php:184
-#: includes/class-wc-gateway-payment-highway.php:297
-#: includes/class-wc-gateway-payment-highway.php:314
+#: includes/class-wc-gateway-payment-highway.php:165
+#: includes/class-wc-gateway-payment-highway.php:278
+#: includes/class-wc-gateway-payment-highway.php:295
 msgid ""
 "Payment Highway payment "
 "failed"
 msgstr ""
 
-#: includes/class-wc-gateway-payment-highway.php:209
+#: includes/class-wc-gateway-payment-highway.php:190
 msgid "Card saved."
 msgstr ""
 
-#: includes/class-wc-gateway-payment-highway.php:261
+#: includes/class-wc-gateway-payment-highway.php:242
 msgid ""
 "Unfortunately the card "
 "does not support "
@@ -136,12 +109,12 @@ msgid ""
 "CVV2 security code."
 msgstr ""
 
-#: includes/class-wc-gateway-payment-highway.php:268
+#: includes/class-wc-gateway-payment-highway.php:249
 msgid ""
 "Card could not be saved. "
 msgstr ""
 
-#: includes/class-wc-gateway-payment-highway.php:286
+#: includes/class-wc-gateway-payment-highway.php:267
 msgid ""
 "You must be logged in."
 msgstr ""
@@ -167,15 +140,41 @@ msgid ""
 "every purchase."
 msgstr ""
 
-#: includes/settings-payment-highway.php:25
+#: includes/settings-payment-highway.php:24
+msgid "Accept Amex cards"
+msgstr ""
+
+#: includes/settings-payment-highway.php:26
+msgid ""
+"Enable Amex logo in "
+"checkout page. You must "
+"have Amex contract with "
+"Payment Highway."
+msgstr ""
+
+#: includes/settings-payment-highway.php:30
+msgid ""
+"Accept Diners Club cards"
+msgstr ""
+
+#: includes/settings-payment-highway.php:32
+msgid ""
+"Enable Diners Club logo "
+"in checkout page. You "
+"must have Diners Club "
+"contract with Payment "
+"Highway."
+msgstr ""
+
+#: includes/settings-payment-highway.php:37
 msgid "Title"
 msgstr ""
 
-#: includes/settings-payment-highway.php:27
-#: includes/settings-payment-highway.php:34
-#: includes/settings-payment-highway.php:42
-#: includes/settings-payment-highway.php:58
-#: includes/settings-payment-highway.php:66
+#: includes/settings-payment-highway.php:39
+#: includes/settings-payment-highway.php:46
+#: includes/settings-payment-highway.php:54
+#: includes/settings-payment-highway.php:70
+#: includes/settings-payment-highway.php:78
 msgid ""
 "This controls the title "
 "for the payment method "
@@ -183,59 +182,65 @@ msgid ""
 "checkout."
 msgstr ""
 
-#: includes/settings-payment-highway.php:32
+#: includes/settings-payment-highway.php:40
+msgid ""
+"Credit Card (Payment "
+"Highway)"
+msgstr ""
+
+#: includes/settings-payment-highway.php:44
 msgid "SPH Account"
 msgstr ""
 
-#: includes/settings-payment-highway.php:35
+#: includes/settings-payment-highway.php:47
 msgid "test"
 msgstr ""
 
-#: includes/settings-payment-highway.php:40
+#: includes/settings-payment-highway.php:52
 msgid "SPH Merchant"
 msgstr ""
 
-#: includes/settings-payment-highway.php:43
+#: includes/settings-payment-highway.php:55
 msgid "test_merchantId"
 msgstr ""
 
-#: includes/settings-payment-highway.php:48
+#: includes/settings-payment-highway.php:60
 msgid "SPH Endpoint URL"
 msgstr ""
 
-#: includes/settings-payment-highway.php:50
+#: includes/settings-payment-highway.php:62
 msgid ""
 "Payment Highway's "
 "endoint url address"
 msgstr ""
 
-#: includes/settings-payment-highway.php:51
+#: includes/settings-payment-highway.php:63
 msgid ""
 "https://v1-hub-staging."
 "sph-test-solinor.com"
 msgstr ""
 
-#: includes/settings-payment-highway.php:56
+#: includes/settings-payment-highway.php:68
 msgid "API Key ID"
 msgstr ""
 
-#: includes/settings-payment-highway.php:59
+#: includes/settings-payment-highway.php:71
 msgid "testKey"
 msgstr ""
 
-#: includes/settings-payment-highway.php:64
+#: includes/settings-payment-highway.php:76
 msgid "API Key Secret"
 msgstr ""
 
-#: includes/settings-payment-highway.php:67
+#: includes/settings-payment-highway.php:79
 msgid "testSecret"
 msgstr ""
 
-#: includes/settings-payment-highway.php:72
+#: includes/settings-payment-highway.php:84
 msgid "Description"
 msgstr ""
 
-#: includes/settings-payment-highway.php:74
+#: includes/settings-payment-highway.php:86
 msgid ""
 "Payment method "
 "description that the "
@@ -243,30 +248,30 @@ msgid ""
 "your checkout."
 msgstr ""
 
-#: includes/settings-payment-highway.php:75
+#: includes/settings-payment-highway.php:87
 msgid ""
 "You will be redirected "
 "to Payment Highway "
 "credit card payment form."
 msgstr ""
 
-#: includes/settings-payment-highway.php:80
+#: includes/settings-payment-highway.php:92
 msgid "Instructions"
 msgstr ""
 
-#: includes/settings-payment-highway.php:82
+#: includes/settings-payment-highway.php:94
 msgid ""
 "Instructions that will "
 "be added to the thank "
 "you page and emails."
 msgstr ""
 
-#: includes/settings-payment-highway.php:88
+#: includes/settings-payment-highway.php:100
 msgid ""
 "Payment Highway Locale"
 msgstr ""
 
-#: includes/settings-payment-highway.php:91
+#: includes/settings-payment-highway.php:103
 msgid ""
 "Language to display in "
 "Payment Highway Form. "
@@ -274,75 +279,99 @@ msgid ""
 "default."
 msgstr ""
 
-#: includes/settings-payment-highway.php:95
+#: includes/settings-payment-highway.php:107
 msgid "Finnish"
 msgstr ""
 
-#: includes/settings-payment-highway.php:96
+#: includes/settings-payment-highway.php:108
 msgid "English"
 msgstr ""
 
-#: includes/settings-payment-highway.php:97
+#: includes/settings-payment-highway.php:109
 msgid "German"
 msgstr ""
 
-#: includes/settings-payment-highway.php:98
+#: includes/settings-payment-highway.php:110
 msgid "Spanish"
 msgstr ""
 
-#: includes/settings-payment-highway.php:99
+#: includes/settings-payment-highway.php:111
 msgid "French"
 msgstr ""
 
-#: includes/settings-payment-highway.php:100
+#: includes/settings-payment-highway.php:112
 msgid "Russian"
 msgstr ""
 
-#: includes/settings-payment-highway.php:101
+#: includes/settings-payment-highway.php:113
 msgid "Swedish"
 msgstr ""
 
-#: includes/wc-paymenthighway-subscriptions.php:25
+#: includes/wc-paymenthighway-subscriptions.php:31
 #, php-format
 msgid ""
 "Payment Highway "
 "Transaction Failed (%s)"
 msgstr ""
 
-#: includes/wc-paymenthighway-subscriptions.php:46
+#: includes/wc-paymenthighway-subscriptions.php:52
 msgid "Customer not found."
 msgstr ""
 
-#: includes/wc-paymenthighway-subscriptions.php:77
+#: includes/wc-paymenthighway-subscriptions.php:83
 #, php-format
 msgid ""
 "Payment Highway payment "
 "rejected: %s."
 msgstr ""
 
-#: includes/wc-paymenthighway-subscriptions.php:82
+#: includes/wc-paymenthighway-subscriptions.php:88
 #, php-format
 msgid ""
 "Payment Highway payment "
 "error: %s."
 msgstr ""
 
-#: includes/wc-paymenthighway-subscriptions.php:86
+#: includes/wc-paymenthighway-subscriptions.php:92
 msgid ""
 "Error while trying to "
 "charge token."
 msgstr ""
 
-#: includes/wc-paymenthighway-subscriptions.php:91
+#: includes/wc-paymenthighway-subscriptions.php:97
 msgid ""
 "Payment Highway payment "
 "completed."
 msgstr ""
 
-#: woocommerce-gateway-payment-highway.php:85
+#: woocommerce-gateway-payment-highway.php:117
+#, php-format
+msgid ""
+" The minimum PHP version "
+"required for Payment "
+"Highway is %1$s. You are "
+"running %2$s."
+msgstr ""
+
+#: woocommerce-gateway-payment-highway.php:123
+msgid ""
+"WooCommerce needs to be "
+"activated."
+msgstr ""
+
+#: woocommerce-gateway-payment-highway.php:127
+#, php-format
+msgid ""
+"The minimum WooCommerce "
+"version required for "
+"Payment Highway is %1$s. "
+"You are running %2$s."
+msgstr ""
+
+#: woocommerce-gateway-payment-highway.php:182
 msgid "Settings"
 msgstr ""
 
-#: woocommerce-gateway-payment-highway.php:86
+#: woocommerce-gateway-payment-highway.php:183
 msgid "Docs"
 msgstr ""

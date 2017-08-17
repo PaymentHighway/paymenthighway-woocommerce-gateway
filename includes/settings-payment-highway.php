@@ -20,12 +20,24 @@ return apply_filters( 'wc_payment_highway_settings',
             'label'   => __( 'Users can save cards that requires CVC for every purchase.', 'wc-payment-highway' ),
             'default' => 'no'
         ),
+        'accept_amex' => array(
+            'title'   => __( 'Accept Amex cards', 'wc-payment-highway' ),
+            'type'    => 'checkbox',
+            'label'   => __( 'Enable Amex logo in checkout page. You must have Amex contract with Payment Highway.', 'wc-payment-highway' ),
+            'default' => 'no'
+        ),
+        'accept_diners' => array(
+            'title'   => __( 'Accept Diners Club cards', 'wc-payment-highway' ),
+            'type'    => 'checkbox',
+            'label'   => __( 'Enable Diners Club logo in checkout page. You must have Diners Club contract with Payment Highway.', 'wc-payment-highway' ),
+            'default' => 'no'
+        ),
 
         'title'       => array(
             'title'       => __( 'Title', 'wc-payment-highway' ),
             'type'        => 'text',
             'description' => __( 'This controls the title for the payment method the customer sees during checkout.', 'wc-payment-highway' ),
-            'default'     => __( 'Payment Highway', 'wc-payment-highway' ),
+            'default'     => __( 'Credit Card (Payment Highway)', 'wc-payment-highway' ),
             'desc_tip'    => true,
         ),
         'sph_account' => array(

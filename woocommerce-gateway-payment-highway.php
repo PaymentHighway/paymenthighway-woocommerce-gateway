@@ -5,8 +5,9 @@
  * Description: WooCommerce Payment Gateway for Payment Highway Credit Card Payments.
  * Author: Payment Highway
  * Author URI: https://paymenthighway.fi
- * Version: 0.1
+ * Version: 1.0.0
  * Text Domain: wc-payment-highway
+ * Domain Path: /languages
  *
  * Copyright: © 2017 Payment Highway (support@paymenthighway.fi).
  *
@@ -23,12 +24,6 @@
 
 defined( 'ABSPATH' ) or exit;
 
-// Make sure WooCommerce is active
-if ( ! in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
-    return;
-}
-
-
 /**
  * SETTINGS
  */
@@ -40,28 +35,7 @@ $paymentHighwaySuffixArray = array(
     'paymenthighway_add_card_failure',
     );
 
-function check_for_payment_highway_response() {
-    global $paymentHighwaySuffixArray;
-    $intersect = array_intersect(array_keys($_GET), $paymentHighwaySuffixArray);
-    foreach ($intersect as $action) {
-        // Start the gateways
-        WC()->payment_gateways();
-        do_action( $action );
-    }
-}
 
-add_action( 'init', 'check_for_payment_highway_response' );
-
-
-/**
- * WooCommerce Payment Highway
- *
- * @class        WC_Payment_Highway
- * @extends        WC_Payment_Gateway
- * @version        0.1
- * @package        WooCommerce/Classes/Payment
- * @author        Payment Highway
- */
 
 if ( ! class_exists( 'WC_PaymentHighway' ) ) :
     class WC_PaymentHighway {
@@ -117,6 +91,7 @@ if ( ! class_exists( 'WC_PaymentHighway' ) ) :
         protected function __construct() {
             add_action( 'plugins_loaded', array( $this, 'init' ) );
         }
+
         /**
          * Init the plugin after plugins_loaded so environment variables are set.
          */
@@ -133,6 +108,10 @@ if ( ! class_exists( 'WC_PaymentHighway' ) ) :
             add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
         }
 
+        /**
+         * Checks the environment for compatibility problems.  Returns a string with the first incompatibility
+         * found or false if the environment has no problems.
+         */
         static function check_environment() {
             if ( version_compare( phpversion(), WC_PAYMENTHIGHWAY_MIN_PHP_VER, '<' ) ) {
                 $message = __( ' The minimum PHP version required for Payment Highway is %1$s. You are running %2$s.', 'wc-payment-highway' );
@@ -154,21 +133,19 @@ if ( ! class_exists( 'WC_PaymentHighway' ) ) :
         }
 
         /**
-         * Initialize the gateway. Called very early - in the context of the plugins_loaded action
+         * Initialize the gateway.
          *
-         * @since 1.0.0
          */
         public function init_gateways() {
-            if ( class_exists( 'WC_Subscriptions_Order' ) && function_exists( 'wcs_create_renewal_order' ) ) {
-                $this->subscription_support_enabled = true;
-                include_once( dirname( __FILE__ ) . '/includes/wc-paymenthighway-subscriptions.php' );
-            }
-
-            include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-payment-highway.php' );
+            require_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-payment-highway.php' );
 
             load_plugin_textdomain( 'wc-payment-highway', false, plugin_basename( dirname( __FILE__ ) ) . '/languages' );
             add_filter( 'woocommerce_payment_gateways', array( $this, 'add_gateways' ) );
 
+            if ( class_exists( 'WC_Subscriptions_Order' ) && function_exists( 'wcs_create_renewal_order' ) ) {
+                $this->subscription_support_enabled = true;
+                require_once( dirname( __FILE__ ) . '/includes/wc-paymenthighway-subscriptions.php' );
+            }
         }
 
         /**
@@ -187,6 +164,7 @@ if ( ! class_exists( 'WC_PaymentHighway' ) ) :
                 $methods[] = 'WC_Gateway_Payment_Highway';
             }
             self::log(print_r($methods, true));
+
             return $methods;
         }
 
@@ -199,7 +177,7 @@ if ( ! class_exists( 'WC_PaymentHighway' ) ) :
          *
          * @return array $links all plugin links + our custom links (i.e., "Settings")
          */
-        public function wc_payment_highway_plugin_links( $links ) {
+        public function plugin_action_links( $links ) {
             $plugin_links = array(
                 '<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=payment_highway' ) . '">' . __( 'Settings', 'wc-payment-highway' ) . '</a>',
                 '<a href="https://paymenthighway.fi/dev/">' . __( 'Docs', 'wc-payment-highway' ) . '</a>'
@@ -208,6 +186,11 @@ if ( ! class_exists( 'WC_PaymentHighway' ) ) :
             return array_merge( $plugin_links, $links );
         }
 
+        /**
+         * Logger
+         *
+         * @param $message
+         */
         public static function log( $message ) {
             if ( empty( self::$log ) ) {
                 self::$log = new WC_Logger();
@@ -215,5 +198,22 @@ if ( ! class_exists( 'WC_PaymentHighway' ) ) :
 
             self::$log->add( 'woocommerce-gateway-payment-highway', $message );
         }
+
     }
+
+    $GLOBALS['wc_payment_highway'] = WC_PaymentHighway::get_instance();
 endif;
+
+
+function check_for_payment_highway_response() {
+    global $paymentHighwaySuffixArray;
+    $intersect = array_intersect(array_keys($_GET), $paymentHighwaySuffixArray);
+    foreach ($intersect as $action) {
+        // Start the gateways
+        WC()->payment_gateways();
+        do_action( $action );
+    }
+}
+
+add_action( 'init', 'check_for_payment_highway_response' );
+

@@ -3,6 +3,11 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+/**
+ * WC_Gateway_Payment_Highway_Subscriptions class.
+ *
+ * @extends WC_Gateway_Payment_Highway
+ */
 class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highway {
 
     public function __construct() {
