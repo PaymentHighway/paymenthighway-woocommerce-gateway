@@ -45,6 +45,7 @@ class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highwa
             $order->payment_complete();
             return true;
         }
+        $amount = $amount * 100;
         $this->logger->info( "Begin processing subscription payment for order {$order->get_id()} for the amount of {$amount}" );
 
         $customerId = $order->get_customer_id();
