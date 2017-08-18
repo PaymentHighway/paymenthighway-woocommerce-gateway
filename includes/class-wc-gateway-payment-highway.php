@@ -14,7 +14,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
 
     public $logger;
-    public $accept_cvc_required;
     public $forms;
     public $subscriptions;
     private $accept_diners;
@@ -61,7 +60,6 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
         $this->title               = $this->get_option( 'title' );
         $this->description         = $this->get_option( 'description' );
         $this->instructions        = $this->get_option( 'instructions', $this->description );
-        $this->accept_cvc_required = $this->get_option( 'accept_cvc_required' ) === 'yes' ? true : false;
 
         $this->accept_diners       = $this->get_option('accept_diners') === 'yes' ? true : false;
         $this->accept_amex         = $this->get_option('accept_amex') === 'yes' ? true : false;
@@ -127,11 +125,23 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
         global $woocommerce;
 
         if ( isset( $_GET[ __FUNCTION__ ] ) ) {
-            $order_id = $_GET['sph-order'];
+            if(isset($_GET['add-card-order-id'])){
+                $order_id = $_GET['add-card-order-id'];
+            }
+            elseif (isset($_GET['sph-order'])){
+                $order_id = $_GET['sph-order'];
+            }
+
             $order    = wc_get_order( $order_id );
             if ( $this->forms->verifySignature( $_GET ) ) {
-                $response = $this->forms->commitPayment( $_GET['sph-transaction-id'], $_GET['sph-amount'], $_GET['sph-currency'] );
-                $order->set_transaction_id( $_GET['sph-transaction-id'] );
+                if(isset($_GET['sph-transaction-id'])){
+                    $response = $this->forms->commitPayment( $_GET['sph-transaction-id'], $_GET['sph-amount'], $_GET['sph-currency'] );
+                    $order->set_transaction_id( $_GET['sph-transaction-id'] );
+                }
+                else {
+                    $response = $this->forms->tokenizeCard($_GET['sph-tokenization-id']);
+                    $order->set_transaction_id($_GET['sph-tokenization-id']);
+                }
                 $this->handle_payment_response( $response, $order );
             } else {
                 $this->redirect_failed_payment( $order, 'Signature mismatch: ' . print_r( $_GET, true ) );
@@ -275,13 +285,20 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
             return $this->process_payment_with_token( $order_id );
         }
         $order = new WC_Order( $order_id );
-        $order->update_status( 'pending payment', __( 'Payment Highway payment failed', 'wc-payment-highway' ) );
+        $order->update_status( 'pending payment', __( 'Pending Payment Highway payment', 'wc-payment-highway' ) );
 
         wc_reduce_stock_levels( $order_id );
 
+        if(self::get_ph_amount($order->get_total()) === 0) {
+            $redirect = $this->forms->addCardForm(true, $order_id);
+        }
+        else {
+            $redirect = $this->forms->addCardAndPaymentForm( $order_id );
+        }
+
         return array(
             'result'   => 'success',
-            'redirect' => $this->forms->addCardAndPaymentForm( $order_id )
+            'redirect' => $redirect
         );
     }
 
@@ -296,7 +313,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
 
         wc_reduce_stock_levels( $order_id );
 
-        $amount = intval( $order->get_total() * 100 );
+        $amount = self::get_ph_amount( $order->get_total() );
 
         $response       = $this->forms->payWithToken( $token->get_token(), $order, $amount, get_woocommerce_currency() );
         $responseObject = json_decode( $response );
@@ -321,6 +338,14 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
         );
     }
 
+    /**
+     * @param float $amount
+     * @return int
+     */
+    public static function get_ph_amount($amount) {
+        return (int)round($amount * 100, 0);
+    }
+
 
     /**
      * add_payment_method function.
@@ -330,7 +355,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
      * @access public
      */
     public function add_payment_method() {
-        wp_redirect( $this->forms->addCardForm( $this->accept_cvc_required ), 303 );
+        wp_redirect( $this->forms->addCardForm(), 303 );
         exit;
     }
 
@@ -348,7 +373,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
             return false;
         }
 
-        $phAmount = is_null( $amount ) ? $amount : ( $amount * 100 );
+        $phAmount = is_null( $amount ) ? $amount : self::get_ph_amount( $amount );
         $this->logger->info( "Revert order: $order_id (TX ID: " . $order->get_transaction_id() . ") amount: $amount, ph-amount: $phAmount" );
 
         $response       = $this->forms->revertPayment( $order->get_transaction_id(), $phAmount );

@@ -9,10 +9,8 @@ use \Solinor\PaymentHighway\Model\Token;
 use \Solinor\PaymentHighway\Model\Request\Transaction;
 
 class WC_Payment_Highway_Forms {
-    private $order_id;
     private $order;
     private $options;
-    private $order_url;
     private $signatureKeyId;
     private $signatureSecret;
     private $account;
@@ -23,6 +21,7 @@ class WC_Payment_Highway_Forms {
     private $secureSigner;
     private $paymentApi;
     private $logger;
+    private $acceptCvcRequired;
 
     /**
      * @param WC_Logger $logger
@@ -38,6 +37,7 @@ class WC_Payment_Highway_Forms {
         $this->currency        = get_woocommerce_currency();
         $this->serviceUrl      = $this->options['sph_url'];
         $this->language        = $this->options['sph_locale'];
+        $this->acceptCvcRequired = $this->options['accept_cvc_required'] === 'yes' ? 'true' : 'false';
         $this->secureSigner    = new SecureSigner( $this->signatureKeyId, $this->signatureSecret );
         $this->paymentApi      = new PaymentApi( $this->serviceUrl, $this->signatureKeyId, $this->signatureSecret, $this->account, $this->merchant );
     }
@@ -111,14 +111,12 @@ class WC_Payment_Highway_Forms {
      * @return string Redirect location
      */
     public function addCardAndPaymentForm( $order_id ) {
-        $this->order_id  = $order_id;
-        $this->order     = new WC_Order( $this->order_id );
-        $this->order_url = WC_Payment_Gateway::get_return_url( $this->order );
+        $this->order     = new WC_Order( $order_id );
 
-        $amount      = intval( $this->order->get_total() * 100 );
-        $description = $this->order_id . ': ' . $this->getOrderItemsAsString();
+        $amount      = WC_Gateway_Payment_Highway::get_ph_amount($this->order->get_total());
+        $description = $order_id . ': ' . $this->getOrderItemsAsString();
         $form        = $this->formBuilder( $this->createCheckoutReturnUrls( "paymenthighway_payment_success" ) )
-                            ->generateAddCardAndPaymentParameters( $amount, $this->currency, $this->order_id, $description );
+                            ->generateAddCardAndPaymentParameters( $amount, $this->currency, $order_id, $description );
 
         return $form->getAction() . '?' . http_build_query( $form->getParameters() );
     }
@@ -132,13 +130,21 @@ class WC_Payment_Highway_Forms {
     }
 
     /**
-     * @param boolean $acceptCvcRequired
+     * @param boolean $fromCheckoutForm
      *
      * @return string Redirect location
      */
-    public function addCardForm($acceptCvcRequired) {
-        $form = $this->formBuilder( $this->createAddCardUrls( 'paymenthighway_add_card_success', 'paymenthighway_add_card_failure' ) )
-                     ->generateAddCardParameters("true");
+    public function addCardForm($fromCheckoutForm = false, $order_id = null) {
+        if($fromCheckoutForm) {
+            $this->order = new WC_Order($order_id);
+
+            $returnUrls = $this->createCheckoutReturnUrls( "paymenthighway_payment_success&add-card-order-id=" . $order_id );
+        }
+        else {
+            $returnUrls = $this->createAddCardUrls( 'paymenthighway_add_card_success', 'paymenthighway_add_card_failure' );
+        }
+        $form = $this->formBuilder( $returnUrls )
+                     ->generateAddCardParameters($this->acceptCvcRequired);
 
         return $form->getAction() . '?' . http_build_query( $form->getParameters() );
     }
