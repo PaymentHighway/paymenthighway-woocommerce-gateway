@@ -91,10 +91,19 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
     /**
      * @override
      *
-     * Override form, so it wont print credit card form
+     * Builds our payment fields area - including tokenization fields for logged
+     * in users, and the actual payment fields.
+     * @since 2.6.0
      */
-    public function form() {
-        return '';
+    public function payment_fields() {
+        if ( $this->supports( 'tokenization' ) && is_checkout() ) {
+            $this->tokenization_script();
+            echo "<p>" . $this->description . "</p>";
+            $this->saved_payment_methods();;
+            $this->save_payment_method_checkbox();
+        } else {
+            $this->form();
+        }
     }
 
     /**
