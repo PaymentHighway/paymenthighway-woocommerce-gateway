@@ -119,16 +119,6 @@ class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highwa
     }
 
     /**
-     * Is $order_id a subscription?
-     * @param  int  $order_id
-     * @return boolean
-     */
-    protected function is_subscription( $order_id ) {
-        return ( function_exists( 'wcs_order_contains_subscription' ) && ( wcs_order_contains_subscription( $order_id ) || wcs_is_subscription( $order_id ) || wcs_order_contains_renewal( $order_id ) ) );
-    }
-
-
-    /**
      * Process the payment based on type.
      * @param  int $order_id
      * @return array

@@ -18,6 +18,8 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
     public $subscriptions;
     private $accept_diners;
     private $accept_amex;
+    protected $accept_cvc_required;
+    protected $accept_orders_with_cvc_required;
 
     public function __construct() {
         global $paymentHighwaySuffixArray;
@@ -57,12 +59,14 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
         $this->forms = new WC_Payment_Highway_Forms( $this->logger );
 
 
-        $this->title               = $this->get_option( 'title' );
-        $this->description         = $this->get_option( 'description' );
-        $this->instructions        = $this->get_option( 'instructions', $this->description );
+        $this->title                            = $this->get_option( 'title' );
+        $this->description                      = $this->get_option( 'description' );
+        $this->instructions                     = $this->get_option( 'instructions', $this->description );
 
-        $this->accept_diners       = $this->get_option('accept_diners') === 'yes' ? true : false;
-        $this->accept_amex         = $this->get_option('accept_amex') === 'yes' ? true : false;
+        $this->accept_diners                    = $this->get_option('accept_diners') === 'yes' ? true : false;
+        $this->accept_amex                      = $this->get_option('accept_amex') === 'yes' ? true : false;
+        $this->accept_cvc_required              = $this->get_option('accept_cvc_required') === 'yes' ? true : false;
+        $this->accept_orders_with_cvc_required  = $this->get_option('accept_orders_with_cvc_required') === 'yes' ? true : false;
 
         add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array($this,'process_admin_options') );
 
@@ -143,9 +147,17 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
 
             $order    = wc_get_order( $order_id );
             if ( $this->forms->verifySignature( $_GET ) ) {
-                if(isset($_GET['sph-transaction-id'])){
-                    $response = $this->forms->commitPayment( $_GET['sph-transaction-id'], $_GET['sph-amount'], $_GET['sph-currency'] );
-                    $order->set_transaction_id( $_GET['sph-transaction-id'] );
+                if(isset($_GET['sph-transaction-id'])) {
+                    $order->set_transaction_id($_GET['sph-transaction-id']);
+                    if ($this->is_subscription($order_id) && !$this->accept_orders_with_cvc_required) {
+                        wc_add_notice( __( 'Your card does not support recurring payments without CVC. Please use another card.', 'wc-payment-highway' ), 'notice' );
+                        $response = $this->forms->revertPayment($_GET['sph-transaction-id'], null);
+                        $order->add_order_note('Recurring payment with card that does not support CVC. Reverting...');
+                        $this->handle_revert_response($response, $order);
+                    }
+                    else {
+                        $response = $this->forms->commitPayment($_GET['sph-transaction-id'], $_GET['sph-amount'], $_GET['sph-currency']);
+                    }
                 }
                 else {
                     $response = $this->forms->tokenizeCard($_GET['sph-tokenization-id']);
@@ -158,10 +170,34 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
         }
     }
 
+    /**
+     * @param $response
+     * @param $order WC_Order
+     */
+    private function handle_revert_response( $response, $order ) {
+        $responseObject = json_decode( $response );
+        if ( $responseObject->result->code === 100 ) {
+            $this->logger->info( $response );
+            $order->add_order_note('Reverted');
+            $this->redirect_failed_payment( $order, 'Recurring payment with card that does not support CVC.' );
+        } else {
+            $this->redirect_failed_payment( $order, $response, $responseObject );
+        }
+    }
+
+    /**
+     * @param $response
+     * @param $order WC_Order
+     */
     private function handle_payment_response( $response, $order ) {
         $responseObject = json_decode( $response );
         if ( $responseObject->result->code === 100 ) {
             $this->logger->info( $response );
+            if(intval($order->get_total()) === 0 && $responseObject->card->cvc_required === 'yes' && !$this->accept_orders_with_cvc_required) {
+                $order->add_order_note('Recurring payment with card that does not support CVC.');
+                wc_add_notice( __( 'Your card does not support recurring payments without CVC. Please use another card.', 'wc-payment-highway' ), 'notice' );
+                $this->redirect_failed_payment( $order, 'Recurring payment with card that does not support CVC.' );
+            }
             $order->payment_complete();
             if ( get_current_user_id() !== 0 && ! $this->save_card( $responseObject ) ) {
                 wc_add_notice( __( 'Card could not be saved.', 'wc-payment-highway' ), 'notice' );
@@ -415,5 +451,14 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
 
 
         return apply_filters( 'woocommerce_gateway_icon', $icon, $this->id );
+    }
+
+    /**
+     * Is $order_id a subscription?
+     * @param  int  $order_id
+     * @return boolean
+     */
+    protected function is_subscription( $order_id ) {
+        return ( function_exists( 'wcs_order_contains_subscription' ) && ( wcs_order_contains_subscription( $order_id ) || wcs_is_subscription( $order_id ) || wcs_order_contains_renewal( $order_id ) ) );
     }
 }
