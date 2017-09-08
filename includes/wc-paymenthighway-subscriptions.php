@@ -53,7 +53,10 @@ class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highwa
         }
 
         $token = WC_Payment_Tokens::get_customer_default_token($order->get_customer_id());
-
+        if(is_null($token)) {
+            $order->add_order_note("Token not found.");
+            return false;
+        }
         if($token->get_gateway_id() !== parent::get_id()) {
             $tokens = WC_Payment_Tokens::get_customer_tokens( $order->get_customer_id(), parent::get_id());
             if(count($tokens) === 0) {
@@ -88,9 +91,7 @@ class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highwa
                     $order->add_order_note( sprintf( __( 'Payment Highway payment error: %s.', 'wc-payment-highway' ), $errorMsg ));
                 }
 
-
                 return new WP_Error( 'paymenthighway_error', __( 'Error while trying to charge token.', 'woocommerce' ) );
-
             }
 
             $order->payment_complete();
@@ -98,6 +99,7 @@ class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highwa
             return true;
         }
         else {
+            $order->add_order_note("Token expired, or token not found.");
             return false;
         }
     }
