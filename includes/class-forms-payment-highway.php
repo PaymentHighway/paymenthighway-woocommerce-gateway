@@ -106,17 +106,17 @@ class WC_Payment_Highway_Forms {
     }
 
     /**
-     * @param $order_id string Order id
+     * @param $orderId string Order id
      *
      * @return string Redirect location
      */
-    public function addCardAndPaymentForm( $order_id ) {
-        $this->order     = new WC_Order( $order_id );
+    public function addCardAndPaymentForm( $orderId ) {
+        $this->order     = new WC_Order( $orderId );
 
         $amount      = WC_Gateway_Payment_Highway::get_ph_amount($this->order->get_total());
-        $description = $order_id . ': ' . $this->getOrderItemsAsString();
+        $description = $orderId . ': ' . $this->getOrderItemsAsString();
         $form        = $this->formBuilder( $this->createCheckoutReturnUrls( "paymenthighway_payment_success" ) )
-                            ->generateAddCardAndPaymentParameters( $amount, $this->currency, $order_id, $description );
+                            ->generateAddCardAndPaymentParameters( $amount, $this->currency, $orderId, $description );
 
         return $form->getAction() . '?' . http_build_query( $form->getParameters() );
     }
@@ -207,7 +207,7 @@ class WC_Payment_Highway_Forms {
         $transaction = new Transaction($cardToken, $amount, $currency, true, $order->get_order_number());
         $initResponse = $this->paymentApi->initTransaction();
         $initResponseObject = json_decode( $initResponse );
-        if ( $initResponseObject->result->code !== 100 ) {
+        if ( $initResponseObject->result->code !== WC_Gateway_Payment_Highway::$PH_REQUEST_SUCCESSFUL ) {
             $this->logger->alert("Error while initializing transaction");
             return $initResponse;
         }

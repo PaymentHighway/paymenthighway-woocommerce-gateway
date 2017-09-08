@@ -24,7 +24,6 @@ class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highwa
      * @param $renewal_order WC_Order A WC_Order object created to record the renewal payment.
      */
     public function scheduled_subscription_payment( $amount_to_charge, $renewal_order ) {
-        $this->logger->debug("foobar asd asdf");
         $response = $this->process_subscription_payment( $renewal_order, $amount_to_charge );
 
         if ( is_wp_error( $response ) ) {
@@ -58,8 +57,8 @@ class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highwa
         if($token->get_gateway_id() !== parent::get_id()) {
             $tokens = WC_Payment_Tokens::get_customer_tokens( $order->get_customer_id(), parent::get_id());
             if(count($tokens) === 0) {
-                $this->logger->alert('Customer' . $order->get_customer_id . ' does not have any stored cards in Payment Highway.');
-                return new WP_Error('', 'Customer' . $order->get_customer_id . ' does not have any stored cards in Payment Highway.');
+                $this->logger->alert('Customer' . $order->get_customer_id() . ' does not have any stored cards in Payment Highway.');
+                return new WP_Error('', 'Customer' . $order->get_customer_id() . ' does not have any stored cards in Payment Highway.');
             }
             /**
              * @var WC_Payment_Token_CC $t
@@ -77,8 +76,8 @@ class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highwa
             $response = $forms->payWithToken($token->get_token(), $order, $amount, get_woocommerce_currency());
             $responseObject = json_decode($response);
 
-            if($responseObject->result->code !== 100) {
-                if($responseObject->result->code === 200) {
+            if($responseObject->result->code !== parent::$PH_REQUEST_SUCCESSFUL) {
+                if($responseObject->result->code === parent::$PH_RESULT_FAILURE) {
                     $errorMsg = "Payment rejected. Token:  {$token->get_token()}. Order: {$order->get_id()}, error: {$responseObject->result->code}, message: {$responseObject->result->message}";
                     $this->logger->info($errorMsg);
                     $order->add_order_note( sprintf( __( 'Payment Highway payment rejected: %s.', 'wc-payment-highway' ), $errorMsg ));
@@ -120,7 +119,10 @@ class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highwa
 
     /**
      * Process the payment based on type.
+     *
      * @param  int $order_id
+     * @param bool $must_be_logged_in
+     *
      * @return array
      */
     public function process_payment( $order_id, $must_be_logged_in = false ) {
