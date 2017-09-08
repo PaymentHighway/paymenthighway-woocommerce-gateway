@@ -1,0 +1,377 @@
+# WordPress Blank Pot
+# Copyright (C) 2014 ...
+# This file is distributed under the GNU General Public License v2 or later.
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: "
+"Payment Highway "
+"Woocommerce gateway "
+"v0.1.0\n"
+"POT-Creation-Date: "
+"2017-08-17 13:03+0300\n"
+"PO-Revision-Date: \n"
+"Last-Translator: Your "
+"Name <you@example.com>\n"
+"Language-Team: Payment "
+"Highway "
+"<support@paymenthighway."
+"fi>\n"
+"Report-Msgid-Bugs-To: "
+"Translator Name "
+"<translations@example."
+"com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/"
+"plain; charset=UTF-8\n"
+"Content-Transfer-"
+"Encoding: 8bit\n"
+"Plural-Forms: "
+"nplurals=2; plural=n != "
+"1;\n"
+"X-Textdomain-Support: "
+"yesX-Generator: Poedit "
+"1.6.4\n"
+"X-Poedit-SourceCharset: "
+"UTF-8\n"
+"X-Poedit-KeywordsList: "
+"__;_e;esc_html_e;"
+"esc_html_x:1,2c;"
+"esc_html__;esc_attr_e;"
+"esc_attr_x:1,2c;"
+"esc_attr__;_ex:1,2c;"
+"_nx:4c,1,2;"
+"_nx_noop:4c,1,2;_x:1,2c;"
+"_n:1,2;_n_noop:1,2;"
+"__ngettext:1,2;"
+"__ngettext_noop:1,2;_c,"
+"_nc:4c,1,2\n"
+"X-Poedit-Basepath: ..\n"
+"Language: en_US\n"
+"X-Generator: Poedit "
+"2.0.3\n"
+"X-Poedit-"
+"SearchPath-0: .\n"
+
+#: includes/class-wc-gateway-payment-highway.php:34
+msgid "Payment Highway"
+msgstr ""
+
+#: includes/class-wc-gateway-payment-highway.php:35
+msgid ""
+"Allows Credit Card "
+"Payments via Payment "
+"Highway."
+msgstr ""
+
+#: includes/class-wc-gateway-payment-highway.php:148
+#: includes/class-wc-gateway-payment-highway.php:213
+msgid ""
+"Card could not be saved."
+msgstr ""
+
+#: includes/class-wc-gateway-payment-highway.php:160
+#: includes/class-wc-gateway-payment-highway.php:307
+msgid ""
+"Payment rejected, please "
+"try again."
+msgstr ""
+
+#: includes/class-wc-gateway-payment-highway.php:161
+msgid ""
+"Payment Highway payment "
+"rejected"
+msgstr ""
+
+#: includes/class-wc-gateway-payment-highway.php:164
+msgid ""
+"Payment failed, please "
+"try again."
+msgstr ""
+
+#: includes/class-wc-gateway-payment-highway.php:165
+#: includes/class-wc-gateway-payment-highway.php:278
+#: includes/class-wc-gateway-payment-highway.php:295
+msgid ""
+"Payment Highway payment "
+"failed"
+msgstr ""
+
+#: includes/class-wc-gateway-payment-highway.php:190
+msgid "Card saved."
+msgstr ""
+
+#: includes/class-wc-gateway-payment-highway.php:242
+msgid ""
+"Unfortunately the card "
+"does not support "
+"payments without CVC2/"
+"CVV2 security code."
+msgstr ""
+
+#: includes/class-wc-gateway-payment-highway.php:249
+msgid ""
+"Card could not be saved. "
+msgstr ""
+
+#: includes/class-wc-gateway-payment-highway.php:267
+msgid ""
+"You must be logged in."
+msgstr ""
+
+#: includes/settings-payment-highway.php:11
+msgid "Enable/Disable"
+msgstr ""
+
+#: includes/settings-payment-highway.php:13
+msgid ""
+"Enable Payment Highway"
+msgstr ""
+
+#: includes/settings-payment-highway.php:18
+msgid ""
+"Accept CVC required cards"
+msgstr ""
+
+#: includes/settings-payment-highway.php:20
+msgid ""
+"Users can save cards "
+"that requires CVC for "
+"every purchase."
+msgstr ""
+
+#: includes/settings-payment-highway.php:24
+msgid "Accept Amex cards"
+msgstr ""
+
+#: includes/settings-payment-highway.php:26
+msgid ""
+"Enable Amex logo in "
+"checkout page. You must "
+"have Amex contract with "
+"Payment Highway."
+msgstr ""
+
+#: includes/settings-payment-highway.php:30
+msgid ""
+"Accept Diners Club cards"
+msgstr ""
+
+#: includes/settings-payment-highway.php:32
+msgid ""
+"Enable Diners Club logo "
+"in checkout page. You "
+"must have Diners Club "
+"contract with Payment "
+"Highway."
+msgstr ""
+
+#: includes/settings-payment-highway.php:37
+msgid "Title"
+msgstr ""
+
+#: includes/settings-payment-highway.php:39
+#: includes/settings-payment-highway.php:46
+#: includes/settings-payment-highway.php:54
+#: includes/settings-payment-highway.php:70
+#: includes/settings-payment-highway.php:78
+msgid ""
+"This controls the title "
+"for the payment method "
+"the customer sees during "
+"checkout."
+msgstr ""
+
+#: includes/settings-payment-highway.php:40
+msgid ""
+"Credit Card (Payment "
+"Highway)"
+msgstr ""
+
+#: includes/settings-payment-highway.php:44
+msgid "SPH Account"
+msgstr ""
+
+#: includes/settings-payment-highway.php:47
+msgid "test"
+msgstr ""
+
+#: includes/settings-payment-highway.php:52
+msgid "SPH Merchant"
+msgstr ""
+
+#: includes/settings-payment-highway.php:55
+msgid "test_merchantId"
+msgstr ""
+
+#: includes/settings-payment-highway.php:60
+msgid "SPH Endpoint URL"
+msgstr ""
+
+#: includes/settings-payment-highway.php:62
+msgid ""
+"Payment Highway's "
+"endoint url address"
+msgstr ""
+
+#: includes/settings-payment-highway.php:63
+msgid ""
+"https://v1-hub-staging."
+"sph-test-solinor.com"
+msgstr ""
+
+#: includes/settings-payment-highway.php:68
+msgid "API Key ID"
+msgstr ""
+
+#: includes/settings-payment-highway.php:71
+msgid "testKey"
+msgstr ""
+
+#: includes/settings-payment-highway.php:76
+msgid "API Key Secret"
+msgstr ""
+
+#: includes/settings-payment-highway.php:79
+msgid "testSecret"
+msgstr ""
+
+#: includes/settings-payment-highway.php:84
+msgid "Description"
+msgstr ""
+
+#: includes/settings-payment-highway.php:86
+msgid ""
+"Payment method "
+"description that the "
+"customer will see on "
+"your checkout."
+msgstr ""
+
+#: includes/settings-payment-highway.php:87
+msgid ""
+"You will be redirected "
+"to Payment Highway "
+"credit card payment form."
+msgstr ""
+
+#: includes/settings-payment-highway.php:92
+msgid "Instructions"
+msgstr ""
+
+#: includes/settings-payment-highway.php:94
+msgid ""
+"Instructions that will "
+"be added to the thank "
+"you page and emails."
+msgstr ""
+
+#: includes/settings-payment-highway.php:100
+msgid ""
+"Payment Highway Locale"
+msgstr ""
+
+#: includes/settings-payment-highway.php:103
+msgid ""
+"Language to display in "
+"Payment Highway Form. "
+"Finnish will be used by "
+"default."
+msgstr ""
+
+#: includes/settings-payment-highway.php:107
+msgid "Finnish"
+msgstr ""
+
+#: includes/settings-payment-highway.php:108
+msgid "English"
+msgstr ""
+
+#: includes/settings-payment-highway.php:109
+msgid "German"
+msgstr ""
+
+#: includes/settings-payment-highway.php:110
+msgid "Spanish"
+msgstr ""
+
+#: includes/settings-payment-highway.php:111
+msgid "French"
+msgstr ""
+
+#: includes/settings-payment-highway.php:112
+msgid "Russian"
+msgstr ""
+
+#: includes/settings-payment-highway.php:113
+msgid "Swedish"
+msgstr ""
+
+#: includes/wc-paymenthighway-subscriptions.php:31
+#, php-format
+msgid ""
+"Payment Highway "
+"Transaction Failed (%s)"
+msgstr ""
+
+#: includes/wc-paymenthighway-subscriptions.php:52
+msgid "Customer not found."
+msgstr ""
+
+#: includes/wc-paymenthighway-subscriptions.php:83
+#, php-format
+msgid ""
+"Payment Highway payment "
+"rejected: %s."
+msgstr ""
+
+#: includes/wc-paymenthighway-subscriptions.php:88
+#, php-format
+msgid ""
+"Payment Highway payment "
+"error: %s."
+msgstr ""
+
+#: includes/wc-paymenthighway-subscriptions.php:92
+msgid ""
+"Error while trying to "
+"charge token."
+msgstr ""
+
+#: includes/wc-paymenthighway-subscriptions.php:97
+msgid ""
+"Payment Highway payment "
+"completed."
+msgstr ""
+
+#: woocommerce-gateway-payment-highway.php:117
+#, php-format
+msgid ""
+" The minimum PHP version "
+"required for Payment "
+"Highway is %1$s. You are "
+"running %2$s."
+msgstr ""
+
+#: woocommerce-gateway-payment-highway.php:123
+msgid ""
+"WooCommerce needs to be "
+"activated."
+msgstr ""
+
+#: woocommerce-gateway-payment-highway.php:127
+#, php-format
+msgid ""
+"The minimum WooCommerce "
+"version required for "
+"Payment Highway is %1$s. "
+"You are running %2$s."
+msgstr ""
+
+#: woocommerce-gateway-payment-highway.php:182
+msgid "Settings"
+msgstr ""
+
+#: woocommerce-gateway-payment-highway.php:183
+msgid "Docs"
+msgstr ""
