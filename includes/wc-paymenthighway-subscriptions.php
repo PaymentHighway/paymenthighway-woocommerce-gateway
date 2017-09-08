@@ -76,8 +76,8 @@ class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highwa
             $response = $forms->payWithToken($token->get_token(), $order, $amount, get_woocommerce_currency());
             $responseObject = json_decode($response);
 
-            if($responseObject->result->code !== parent::$PH_REQUEST_SUCCESSFUL) {
-                if($responseObject->result->code === parent::$PH_RESULT_FAILURE) {
+            if($responseObject->result->code !== parent::PH_REQUEST_SUCCESSFUL) {
+                if($responseObject->result->code === parent::PH_RESULT_FAILURE) {
                     $errorMsg = "Payment rejected. Token:  {$token->get_token()}. Order: {$order->get_id()}, error: {$responseObject->result->code}, message: {$responseObject->result->message}";
                     $this->logger->info($errorMsg);
                     $order->add_order_note( sprintf( __( 'Payment Highway payment rejected: %s.', 'wc-payment-highway' ), $errorMsg ));

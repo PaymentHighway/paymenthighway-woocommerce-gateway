@@ -9,6 +9,9 @@ use \Solinor\PaymentHighway\Model\Token;
 use \Solinor\PaymentHighway\Model\Request\Transaction;
 
 class WC_Payment_Highway_Forms {
+    /**
+     * @var WC_Order
+     */
     private $order;
     private $options;
     private $signatureKeyId;
@@ -46,7 +49,7 @@ class WC_Payment_Highway_Forms {
     /**
      * @param $returnUrls array Array of return urls [successUrl, failureUrl, cancelUrl]
      *
-     * @return object $form
+     * @return FormBuilder $form
      */
     private function formBuilder( $returnUrls ) {
         return new FormBuilder( "GET", $this->signatureKeyId, $this->signatureSecret, $this->account,
@@ -63,7 +66,6 @@ class WC_Payment_Highway_Forms {
         global $woocommerce;
         $checkout_url = $woocommerce->cart->get_checkout_url();
 
-        $method     = "GET";
         $successUrl = $this->order->get_checkout_order_received_url();
         if ( $successSuffix !== '' ) {
             $successUrl = $this->addQueryParameter($successUrl, $successSuffix);
@@ -80,6 +82,8 @@ class WC_Payment_Highway_Forms {
 
     /**
      * @param string $successSuffix
+     *
+     * @param string $failureSuffix
      *
      * @return array
      */
@@ -132,13 +136,15 @@ class WC_Payment_Highway_Forms {
     /**
      * @param boolean $fromCheckoutForm
      *
+     * @param null $orderId
+     *
      * @return string Redirect location
      */
-    public function addCardForm($fromCheckoutForm = false, $order_id = null) {
+    public function addCardForm($fromCheckoutForm = false, $orderId = null) {
         if($fromCheckoutForm) {
-            $this->order = new WC_Order($order_id);
+            $this->order = new WC_Order($orderId);
 
-            $returnUrls = $this->createCheckoutReturnUrls( "paymenthighway_payment_success&add-card-order-id=" . $order_id );
+            $returnUrls = $this->createCheckoutReturnUrls( "paymenthighway_payment_success&add-card-order-id=" . $orderId );
         }
         else {
             $returnUrls = $this->createAddCardUrls( 'paymenthighway_add_card_success', 'paymenthighway_add_card_failure' );
@@ -207,7 +213,7 @@ class WC_Payment_Highway_Forms {
         $transaction = new Transaction($cardToken, $amount, $currency, true, $order->get_order_number());
         $initResponse = $this->paymentApi->initTransaction();
         $initResponseObject = json_decode( $initResponse );
-        if ( $initResponseObject->result->code !== WC_Gateway_Payment_Highway::$PH_REQUEST_SUCCESSFUL ) {
+        if ( $initResponseObject->result->code !== WC_Gateway_Payment_Highway::PH_REQUEST_SUCCESSFUL ) {
             $this->logger->alert("Error while initializing transaction");
             return $initResponse;
         }

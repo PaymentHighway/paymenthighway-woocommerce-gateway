@@ -20,8 +20,8 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
     private $accept_amex;
     protected $accept_cvc_required;
     protected $accept_orders_with_cvc_required;
-    public static $PH_REQUEST_SUCCESSFUL = 100;
-    public static $PH_RESULT_FAILURE = 200;
+    const PH_REQUEST_SUCCESSFUL = 100;
+    const PH_RESULT_FAILURE = 200;
 
     public function __construct() {
         global $paymentHighwaySuffixArray;
@@ -155,19 +155,11 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
             if ( $this->forms->verifySignature( $_GET ) ) {
                 if(isset($_GET['sph-transaction-id'])) {
                     $order->set_transaction_id($_GET['sph-transaction-id']);
-                    if ($this->is_subscription($order_id) && !$this->accept_orders_with_cvc_required) {
-                        wc_add_notice( __( 'Your card does not support recurring payments without CVC. Please use another card.', 'wc-payment-highway' ), 'notice' );
-                        $response = $this->forms->revertPayment($_GET['sph-transaction-id'], null);
-                        $order->add_order_note('Recurring payment with card that does not support CVC. Reverting...');
-                        $this->handle_revert_response($response, $order);
-                    }
-                    else {
-                        $response = $this->forms->commitPayment($_GET['sph-transaction-id'], $_GET['sph-amount'], $_GET['sph-currency']);
-                    }
+                    $response = $this->forms->commitPayment($_GET['sph-transaction-id'], $_GET['sph-amount'], $_GET['sph-currency']);
                 }
                 else {
-                    $response = $this->forms->tokenizeCard($_GET['sph-tokenization-id']);
                     $order->set_transaction_id($_GET['sph-tokenization-id']);
+                    $response = $this->forms->tokenizeCard($_GET['sph-tokenization-id']);
                 }
                 $this->handle_payment_response( $response, $order );
             } else {
@@ -182,12 +174,13 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
      */
     private function handle_revert_response( $response, $order ) {
         $responseObject = json_decode( $response );
-        if ( $responseObject->result->code === self::$PH_REQUEST_SUCCESSFUL ) {
+        if ( $responseObject->result->code === self::PH_REQUEST_SUCCESSFUL ) {
             $this->logger->info( $response );
             $order->add_order_note('Reverted');
-            $this->redirect_failed_payment( $order, 'Recurring payment with card that does not support CVC.' );
-        } else {
-            $this->redirect_failed_payment( $order, $response, $responseObject );
+        }
+        else {
+            $order->add_order_note('Transaction could not be reverted! Check logs!');
+            $this->logger->alert("Transaction could not be reverted! Response: " . print_r($responseObject, true));
         }
     }
 
@@ -197,13 +190,9 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
      */
     private function handle_payment_response( $response, $order ) {
         $responseObject = json_decode( $response );
-        if ( $responseObject->result->code === self::$PH_REQUEST_SUCCESSFUL ) {
+        if ( $responseObject->result->code === self::PH_REQUEST_SUCCESSFUL ) {
             $this->logger->info( $response );
-            if(intval($order->get_total()) === 0 && $responseObject->card->cvc_required === 'yes' && !$this->accept_orders_with_cvc_required) {
-                $order->add_order_note('Recurring payment with card that does not support CVC.');
-                wc_add_notice( __( 'Your card does not support recurring payments without CVC. Please use another card.', 'wc-payment-highway' ), 'notice' );
-                $this->redirect_failed_payment( $order, 'Recurring payment with card that does not support CVC.' );
-            }
+            $this->check_if_recurring_payment_needs_cvc($responseObject, $order);
             $order->payment_complete();
             if ( get_current_user_id() !== 0 && ! $this->save_card( $responseObject ) ) {
                 wc_add_notice( __( 'Card could not be saved.', 'wc-payment-highway' ), 'notice' );
@@ -216,13 +205,31 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
     }
 
     /**
+     * @param $responseObject
+     * @param $order WC_Order
+     */
+    private function check_if_recurring_payment_needs_cvc($responseObject, $order) {
+        if($this->is_subscription($order->get_id()) && $responseObject->card->cvc_required === 'yes' && !$this->accept_orders_with_cvc_required) {
+            $order->add_order_note('Recurring payment with card that does not support CVC.');
+            wc_add_notice( __( 'Your card does not support recurring payments without CVC. Please use another card.', 'wc-payment-highway' ), 'notice' );
+            if(intval($order->get_total()) !== 0) {
+                $response = $this->forms->revertPayment($order->get_transaction_id(), null);
+                $order->add_order_note('Reverting...');
+                $this->handle_revert_response($response, $order);
+            }
+            $this->redirect_failed_payment( $order, 'Recurring payment with card that does not support CVC.' );
+            exit;
+        }
+    }
+
+    /**
      * @param $order WC_Order
      * @param $error
      * @param null $responseObject
      */
     private function redirect_failed_payment( $order, $error, $responseObject = null ) {
         global $woocommerce;
-        if(!is_null($responseObject) && $responseObject->result->code === self::$PH_RESULT_FAILURE) {
+        if(!is_null($responseObject) && $responseObject->result->code === self::PH_RESULT_FAILURE) {
             wc_add_notice( __( 'Payment rejected, please try again.', 'wc-payment-highway' ), 'error' );
             $order->update_status( 'failed', __( 'Payment Highway payment rejected', 'wc-payment-highway' ) );
         }
@@ -299,7 +306,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
 
     private function handle_add_card_response( $response ) {
         $responseObject = json_decode( $response );
-        if ( $responseObject->result->code === self::$PH_REQUEST_SUCCESSFUL ) {
+        if ( $responseObject->result->code === self::PH_REQUEST_SUCCESSFUL ) {
             if ( $responseObject->card->cvc_required === "no" || $this->accept_cvc_required ) {
                 $this->save_card( $responseObject );
                 wp_redirect( get_permalink( get_option( 'woocommerce_myaccount_page_id' ) ) );
@@ -374,9 +381,9 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
         $response       = $this->forms->payWithToken( $token->get_token(), $order, $amount, get_woocommerce_currency() );
         $responseObject = json_decode( $response );
 
-        if ( $responseObject->result->code !== self::$PH_REQUEST_SUCCESSFUL ) {
+        if ( $responseObject->result->code !== self::PH_REQUEST_SUCCESSFUL ) {
             $this->logger->alert( "Error while making debit transaction with token. Order: $order_id, PH Code: " . $responseObject->result->code . ", " . $responseObject->result->message );
-            if($responseObject->result->code === self::$PH_RESULT_FAILURE) {
+            if($responseObject->result->code === self::PH_RESULT_FAILURE) {
                 wc_add_notice( __( 'Payment rejected, please try again.', 'wc-payment-highway' ), 'error' );
             }
 
@@ -436,7 +443,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
 
         $response       = $this->forms->revertPayment( $order->get_transaction_id(), $phAmount );
         $responseObject = json_decode( $response );
-        if ( $responseObject->result->code === self::$PH_REQUEST_SUCCESSFUL ) {
+        if ( $responseObject->result->code === self::PH_REQUEST_SUCCESSFUL ) {
             return true;
         } else {
             $this->logger->alert( "Error while making refund for order $order_id. PH Code:" . $responseObject->result->code . ", " . $responseObject->result->message );
