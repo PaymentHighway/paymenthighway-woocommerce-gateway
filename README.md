@@ -12,7 +12,7 @@ For full documentation on the PaymentHighway API visit our developer website: ht
 * Wordpress
 * Woocommerce >= 3.0.0
 
-If you are planning to make recurring payments, you need woocommerce subscriptions plugin.
+If you are planning to make recurring payments, you need WooCommerce subscriptions plugin.
 
 ## Help us make it better
 
