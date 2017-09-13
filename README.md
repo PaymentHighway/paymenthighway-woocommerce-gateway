@@ -1,7 +1,7 @@
 # WooCommerce Payment Highway Payment Gateway
-Payment Highway Woocommerce Plugin with Subscriptions support
+Payment Highway WooCommerce Plugin with Subscriptions support
 
-This is a Woocommerce plugin for communication with the Payment Highway API.
+This is a WooCommerce plugin for communication with the Payment Highway API.
 
 This code is provided as-is, use it as inspiration, reference or drop it directly into your own project and use it.
 
