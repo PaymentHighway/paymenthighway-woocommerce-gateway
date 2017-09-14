@@ -14,6 +14,13 @@ return apply_filters( 'wc_payment_highway_settings',
             'default' => 'yes'
         ),
 
+        'save_all_credit_cards' => array(
+            'title'   => __( 'Save all credit cards', 'wc-payment-highway' ),
+            'type'    => 'checkbox',
+            'label'   => __( 'Use "add and save card"-form for every payments. ', 'wc-payment-highway' ),
+            'default' => 'yes'
+        ),
+
         'accept_orders_with_cvc_required' => array(
             'title'   => __( 'Accept subscriptions with CVC required cards', 'wc-payment-highway' ),
             'type'    => 'checkbox',

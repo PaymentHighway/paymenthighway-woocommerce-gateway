@@ -215,5 +215,5 @@ function check_for_payment_highway_response() {
     }
 }
 
-add_action( 'init', 'check_for_payment_highway_response' );
+add_action( 'wp_loaded', 'check_for_payment_highway_response' );
 

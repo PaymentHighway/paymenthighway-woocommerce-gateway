@@ -20,6 +20,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
     private $accept_amex;
     protected $accept_cvc_required;
     protected $accept_orders_with_cvc_required;
+    protected $save_all_credit_cards;
     const PH_REQUEST_SUCCESSFUL = 100;
     const PH_RESULT_FAILURE = 200;
 
@@ -69,6 +70,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
         $this->accept_amex                      = $this->get_option('accept_amex') === 'yes' ? true : false;
         $this->accept_cvc_required              = $this->get_option('accept_cvc_required') === 'yes' ? true : false;
         $this->accept_orders_with_cvc_required  = $this->get_option('accept_orders_with_cvc_required') === 'yes' ? true : false;
+        $this->save_all_credit_cards            = $this->get_option('save_all_credit_cards') === 'yes' ? true : false;
 
         add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array($this,'process_admin_options') );
 
@@ -194,11 +196,12 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
             $this->logger->info( $response );
             $this->check_if_recurring_payment_needs_cvc($responseObject, $order);
             $order->payment_complete();
-            if ( get_current_user_id() !== 0 && ! $this->save_card( $responseObject ) ) {
-                wc_add_notice( __( 'Card could not be saved.', 'wc-payment-highway' ), 'notice' );
+            if($this->is_subscription($order->get_id()) || $this->save_all_credit_cards) {
+                if ( get_current_user_id() !== 0 && ! $this->save_card( $responseObject ) ) {
+                    wc_add_notice( __( 'Card could not be saved.', 'wc-payment-highway' ), 'notice' );
+                }
             }
             wp_redirect( $order->get_checkout_order_received_url() );
-            exit;
         } else {
             $this->redirect_failed_payment( $order, $response, $responseObject );
         }
@@ -218,7 +221,6 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
                 $this->handle_revert_response($response, $order);
             }
             $this->redirect_failed_payment( $order, 'Recurring payment with card that does not support CVC.' );
-            exit;
         }
     }
 
@@ -239,7 +241,6 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
             $this->logger->alert( $error );
         }
         wp_redirect( $woocommerce->cart->get_checkout_url() );
-        exit;
     }
 
     private function save_card( $responseObject ) {
@@ -310,7 +311,6 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
             if ( $responseObject->card->cvc_required === "no" || $this->accept_cvc_required ) {
                 $this->save_card( $responseObject );
                 wp_redirect( get_permalink( get_option( 'woocommerce_myaccount_page_id' ) ) );
-                exit;
             } else {
                 $this->redirect_add_card( __( 'Unfortunately the card does not support payments without CVC2/CVV2 security code.' ), 'Card could not be used without cvc.', 'notice' );
             }
@@ -321,7 +321,6 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
         $this->logger->alert( $error );
         wc_add_notice( __( 'Card could not be saved. ' . $notice, 'wc-payment-highway' ), $level );
         wp_redirect( get_permalink( get_option( 'woocommerce_myaccount_page_id' ) ) );
-        exit;
     }
 
 
@@ -348,7 +347,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
             return $this->process_payment_with_token( $order_id );
         }
         $order = new WC_Order( $order_id );
-        $order->update_status( 'pending payment', __( 'Pending Payment Highway payment', 'wc-payment-highway' ) );
+        $order->update_status( 'pending', __( 'Pending Payment Highway payment', 'wc-payment-highway' ) );
 
         wc_reduce_stock_levels( $order_id );
 
@@ -356,7 +355,11 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
             $redirect = $this->forms->addCardForm(true, $order_id);
         }
         else {
-            $redirect = $this->forms->addCardAndPaymentForm( $order_id );
+            if (!$this->is_subscription($order_id) && !$this->save_all_credit_cards) {
+                $redirect = $this->forms->paymentForm($order_id);
+            } else {
+                $redirect = $this->forms->addCardAndPaymentForm($order_id);
+            }
         }
 
         return array(
@@ -372,7 +375,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
         $token    = WC_Payment_Tokens::get( $token_id );
 
         $order = new WC_Order( $order_id );
-        $order->update_status( 'pending payment', __( 'Payment Highway payment failed', 'wc-payment-highway' ) );
+        $order->update_status( 'pending', __( 'Payment Highway payment failed', 'wc-payment-highway' ) );
 
         wc_reduce_stock_levels( $order_id );
 
@@ -419,7 +422,6 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
      */
     public function add_payment_method() {
         wp_redirect( $this->forms->addCardForm(), 303 );
-        exit;
     }
 
     /**
