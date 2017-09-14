@@ -17,7 +17,7 @@ return apply_filters( 'wc_payment_highway_settings',
         'save_all_credit_cards' => array(
             'title'   => __( 'Save all credit cards', 'wc-payment-highway' ),
             'type'    => 'checkbox',
-            'label'   => __( 'Use "add and save card"-form for every payments. ', 'wc-payment-highway' ),
+            'label'   => __( 'Use "pay and add card" form for every payments.', 'wc-payment-highway' ),
             'default' => 'yes'
         ),
 

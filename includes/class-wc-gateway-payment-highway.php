@@ -66,11 +66,11 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
         $this->description                      = $this->get_option( 'description' );
         $this->instructions                     = $this->get_option( 'instructions', $this->description );
 
-        $this->accept_diners                    = $this->get_option('accept_diners') === 'yes' ? true : false;
-        $this->accept_amex                      = $this->get_option('accept_amex') === 'yes' ? true : false;
-        $this->accept_cvc_required              = $this->get_option('accept_cvc_required') === 'yes' ? true : false;
-        $this->accept_orders_with_cvc_required  = $this->get_option('accept_orders_with_cvc_required') === 'yes' ? true : false;
-        $this->save_all_credit_cards            = $this->get_option('save_all_credit_cards') === 'yes' ? true : false;
+        $this->accept_diners                    = $this->get_option('accept_diners') === 'yes';
+        $this->accept_amex                      = $this->get_option('accept_amex') === 'yes';
+        $this->accept_cvc_required              = $this->get_option('accept_cvc_required') === 'yes';
+        $this->accept_orders_with_cvc_required  = $this->get_option('accept_orders_with_cvc_required') === 'yes';
+        $this->save_all_credit_cards            = $this->get_option('save_all_credit_cards') === 'yes';
 
         add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array($this,'process_admin_options') );
 
