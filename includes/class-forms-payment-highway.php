@@ -125,6 +125,22 @@ class WC_Payment_Highway_Forms {
         return $form->getAction() . '?' . http_build_query( $form->getParameters() );
     }
 
+    /**
+     * @param $orderId string Order ID
+     *
+     * @return string Redirect location
+     */
+    public function paymentForm($orderId) {
+        $this->order     = new WC_Order( $orderId );
+
+        $amount      = WC_Gateway_Payment_Highway::get_ph_amount($this->order->get_total());
+        $description = $orderId . ': ' . $this->getOrderItemsAsString();
+        $form        = $this->formBuilder( $this->createCheckoutReturnUrls( "paymenthighway_payment_success" ) )
+            ->generatePaymentParameters( $amount, $this->currency, $orderId, $description );
+
+        return $form->getAction() . '?' . http_build_query( $form->getParameters() );
+    }
+
     private function getOrderItemsAsString() {
         $arr = array();
         foreach ($this->order->get_items() as $item) {

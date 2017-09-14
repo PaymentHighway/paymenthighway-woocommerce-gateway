@@ -5,7 +5,7 @@
  * Description: WooCommerce Payment Gateway for Payment Highway Credit Card Payments.
  * Author: Payment Highway
  * Author URI: https://paymenthighway.fi
- * Version: 1.1.0
+ * Version: 1.2.0
  * Text Domain: wc-payment-highway
  * Domain Path: /languages
  *
@@ -215,5 +215,5 @@ function check_for_payment_highway_response() {
     }
 }
 
-add_action( 'init', 'check_for_payment_highway_response' );
+add_action( 'wp_loaded', 'check_for_payment_highway_response' );
 
