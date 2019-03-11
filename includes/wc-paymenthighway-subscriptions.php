@@ -106,7 +106,7 @@ class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highwa
 
     private function tokenNotExpired($token) {
         return sprintf("%04d%02d", $token->get_expiry_year(), $token->get_expiry_month()) >= date("Ym");
- 	}
+    }
 
     /**
      * @param WC_Payment_Token_CC $token
