@@ -109,8 +109,6 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
             echo "<p>" . $this->description . "</p>";
             $this->saved_payment_methods();;
             $this->save_payment_method_checkbox();
-        } else {
-            $this->form();
         }
     }
 

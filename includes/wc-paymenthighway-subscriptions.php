@@ -67,7 +67,7 @@ class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highwa
              * @var WC_Payment_Token_CC $t
              */
             foreach ($tokens as $t) {
-                if($t->get_expiry_year() >= date("Y") && $t->get_expiry_month() >= date('m')){
+                if($this->tokenNotExpired($t)){
                     $token = $t;
                     break;
                 }
@@ -104,6 +104,10 @@ class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highwa
         }
     }
 
+    private function tokenNotExpired($token) {
+        return sprintf("%04d%02d", $token->get_expiry_year(), $token->get_expiry_month()) >= date("Ym");
+    }
+
     /**
      * @param WC_Payment_Token_CC $token
      * @return boolean
@@ -111,7 +115,7 @@ class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highwa
     private function checkToken( $token ) {
         if ( $token->get_gateway_id() !== parent::get_id() ) {
             return false;
-        } elseif ( $token->get_expiry_year() >= date( "Y" ) && $token->get_expiry_month() >= date( 'm' ) ) {
+        } elseif ($this->tokenNotExpired($token)) {
             $this->logger->info("Expired token: {$token->get_token()}");
             return true;
         } else {
