@@ -24,6 +24,7 @@ For full documentation on the PaymentHighway API visit our developer website: [h
 1. Upload the plugin files to the `/wp-content/plugins/woocommerce-gateway-payment-highway` directory, or install the plugin through the WordPress plugins screen directly.
 1. Activate the plugin through the 'Plugins' screen in WordPress
 1. Use the Plugins->WooCommerce Payment Highway->settings screen to configure the plugin
+1. Even though you don't want to update any settings, press the save button. Default values may not always get saved to database automatically.
 
 
 == Frequently Asked Questions ==
