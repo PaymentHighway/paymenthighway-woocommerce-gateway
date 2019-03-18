@@ -35,5 +35,7 @@ For full documentation on the PaymentHighway API visit our developer website: [h
 
 = 1.2.0 =
 * Initial release
+= 1.2.1 =
+* Bug fixes
 
 == Upgrade Notice ==
