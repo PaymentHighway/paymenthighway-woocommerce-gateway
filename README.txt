@@ -2,8 +2,8 @@
 Contributors: paymenthighway
 Tags: payment gateway, credit card, woocommerce, payment highway, recurring payments
 Requires at least: 4.8
-Tested up to: 4.8
-Requires PHP: 5.4
+Tested up to: 5.2.2
+Requires PHP: 5.6
 Stable tag: trunk
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
