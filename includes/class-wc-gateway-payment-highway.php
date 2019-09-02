@@ -195,6 +195,10 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
             $this->logger->info( $response );
             $this->check_if_recurring_payment_needs_cvc($responseObject, $order);
             $order->payment_complete();
+            $order->add_order_note(
+                sprintf("Payment complete. Filing code: %s, transaction id: %s, Card type: %s, bin: %s, partial pan: %s ",
+                    $responseObject->filing_code, $order->get_transaction_id(), $responseObject->card->type, $responseObject->card->bin, $responseObject->card->partial_pan)
+            );
             if($this->is_subscription($order->get_id()) || $this->save_all_credit_cards) {
                 if ( get_current_user_id() !== 0 && ! $this->save_card( $responseObject ) ) {
                     wc_add_notice( __( 'Card could not be saved.', 'wc-payment-highway' ), 'notice' );
@@ -400,7 +404,13 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
         );
     }
 
-    private function process_soft_decline_response($order_id, $responseObject) {
+    /**
+     * @param $order_id
+     * @param $responseObject
+     * @param $order WC_Order
+     * @return array
+     */
+    private function process_soft_decline_response($order_id, $responseObject, $order) {
         global $woocommerce;
 
         $three_d_secure_url = $responseObject->three_d_secure_url;
