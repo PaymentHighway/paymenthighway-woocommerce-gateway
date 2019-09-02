@@ -3,10 +3,13 @@
 require 'vendor/autoload.php';
 
 use \Solinor\PaymentHighway\FormBuilder;
+use Solinor\PaymentHighway\Model\Sca\ReturnUrls;
 use \Solinor\PaymentHighway\PaymentApi;
 use Solinor\PaymentHighway\Security\SecureSigner;
 use \Solinor\PaymentHighway\Model\Token;
 use \Solinor\PaymentHighway\Model\Request\Transaction;
+use \Solinor\PaymentHighway\Model\Request\CustomerInitiatedTransaction;
+use \Solinor\PaymentHighway\Model\Sca\StrongCustomerAuthentication;
 
 class WC_Payment_Highway_Forms {
     /**
@@ -63,8 +66,7 @@ class WC_Payment_Highway_Forms {
      * @return array
      */
     private function createCheckoutReturnUrls( $successSuffix = '' ) {
-        global $woocommerce;
-        $checkout_url = $woocommerce->cart->get_checkout_url();
+        $checkout_url = wc_get_checkout_url();
 
         $successUrl = $this->order->get_checkout_order_received_url();
         if ( $successSuffix !== '' ) {
@@ -120,7 +122,7 @@ class WC_Payment_Highway_Forms {
         $amount      = WC_Gateway_Payment_Highway::get_ph_amount($this->order->get_total());
         $description = $orderId . ': ' . $this->getOrderItemsAsString();
         $form        = $this->formBuilder( $this->createCheckoutReturnUrls( "paymenthighway_payment_success" ) )
-                            ->generateAddCardAndPaymentParameters( $amount, $this->currency, $orderId, $description );
+            ->generateAddCardAndPaymentParameters( $amount, $this->currency, $orderId, $description );
 
         return $form->getAction() . '?' . http_build_query( $form->getParameters() );
     }
@@ -166,7 +168,7 @@ class WC_Payment_Highway_Forms {
             $returnUrls = $this->createAddCardUrls( 'paymenthighway_add_card_success', 'paymenthighway_add_card_failure' );
         }
         $form = $this->formBuilder( $returnUrls )
-                     ->generateAddCardParameters($this->acceptCvcRequired);
+            ->generateAddCardParameters($this->acceptCvcRequired);
 
         return $form->getAction() . '?' . http_build_query( $form->getParameters() );
     }
@@ -217,6 +219,8 @@ class WC_Payment_Highway_Forms {
     }
 
     /**
+     * Customer initiated transaction
+     *
      * @param $token
      * @param WC_Order $order
      * @param $amount
@@ -224,7 +228,45 @@ class WC_Payment_Highway_Forms {
      *
      * @return \Httpful\Response
      */
-    public function payWithToken($token, $order, $amount, $currency) {
+    public function payCitWithToken($token, $order, $amount, $currency) {
+        $cardToken = new Token($token);
+        $this->setOrderIfNull($order);
+        $returnUrlsArray = $this->createCheckoutReturnUrls( "paymenthighway_payment_success" );
+        $returnUrls = new ReturnUrls($returnUrlsArray['successUrl'], $returnUrlsArray['failureUrl'], $returnUrlsArray['cancelUrl']);
+        $strongCustomerAuthentication = new StrongCustomerAuthentication($returnUrls);
+        $transaction = new CustomerInitiatedTransaction($cardToken, $amount, $currency, $strongCustomerAuthentication, true, $order->get_order_number());
+        $initResponse = $this->paymentApi->initTransaction();
+        $initResponseObject = json_decode( $initResponse );
+        if ( $initResponseObject->result->code !== WC_Gateway_Payment_Highway::PH_REQUEST_SUCCESSFUL ) {
+            $this->logger->alert("Error while initializing transaction");
+            return $initResponse;
+        }
+        $order->set_transaction_id($initResponseObject->id);
+        return $this->paymentApi->chargeCustomerInitiatedTransaction($initResponseObject->id, $transaction);
+    }
+
+    /**
+     * Set order if not already set
+     *
+     * @param $order
+     */
+    private function setOrderIfNull($order) {
+        if(is_null($this->order)){
+            $this->order = $order;
+        }
+    }
+
+    /**
+     * Merchant initiated transaction
+     *
+     * @param $token
+     * @param WC_Order $order
+     * @param $amount
+     * @param $currency
+     *
+     * @return \Httpful\Response
+     */
+    public function payMitWithToken($token, $order, $amount, $currency) {
         $cardToken = new Token($token);
         $transaction = new Transaction($cardToken, $amount, $currency, true, $order->get_order_number());
         $initResponse = $this->paymentApi->initTransaction();
@@ -234,7 +276,6 @@ class WC_Payment_Highway_Forms {
             return $initResponse;
         }
         $order->set_transaction_id($initResponseObject->id);
-        return $this->paymentApi->debitTransaction($initResponseObject->id, $transaction);
+        return $this->paymentApi->chargeMerchantInitiatedTransaction($initResponseObject->id, $transaction);
     }
-
 }

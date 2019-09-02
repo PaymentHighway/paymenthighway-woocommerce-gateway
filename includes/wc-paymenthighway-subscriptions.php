@@ -76,7 +76,7 @@ class WC_Gateway_Payment_Highway_Subscriptions extends WC_Gateway_Payment_Highwa
         if($this->checkToken($token)){
             $forms = parent::get_forms();
 
-            $response = $forms->payWithToken($token->get_token(), $order, $amount, get_woocommerce_currency());
+            $response = $forms->payMitWithToken($token->get_token(), $order, $amount, get_woocommerce_currency());
             $responseObject = json_decode($response);
 
             if($responseObject->result->code !== parent::PH_REQUEST_SUCCESSFUL) {

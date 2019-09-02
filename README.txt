@@ -37,5 +37,7 @@ For full documentation on the PaymentHighway API visit our developer website: [h
 * Initial release
 = 1.2.1 =
 * Bug fixes
+= 1.3.0 =
+* PSD2 compliant version. Paying with token (stored card) may result 3DS.
 
 == Upgrade Notice ==
