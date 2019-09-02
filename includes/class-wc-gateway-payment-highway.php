@@ -421,6 +421,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
             return $this->process_failure_response($order_id, $responseObject);
         }
 
+        $order->add_order_note('Soft decline. Redirect to 3DS');
         return array(
             'result'   => 'success',
             'redirect' => $three_d_secure_url
