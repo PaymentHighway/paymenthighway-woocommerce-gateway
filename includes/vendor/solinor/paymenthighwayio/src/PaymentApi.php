@@ -3,6 +3,7 @@
 use Httpful\Request;
 use Httpful\Response;
 use Solinor\PaymentHighway\Model\Request\Transaction;
+use Solinor\PaymentHighway\Model\Request\CustomerInitiatedTransaction;
 use Solinor\PaymentHighway\Security\SecureSigner;
 use Respect\Validation\Validator;
 
@@ -55,7 +56,7 @@ class PaymentApi
      * @param string $merchant
      * @param string $apiversion
      */
-    public function __construct($serviceUrl, $signatureKeyId, $signatureSecret, $account, $merchant, $apiversion = "20160630")
+    public function __construct($serviceUrl, $signatureKeyId, $signatureSecret, $account, $merchant, $apiversion = "20180725")
     {
         $this->serviceUrl = $serviceUrl;
         $this->signatureKeyId = $signatureKeyId;
@@ -83,6 +84,7 @@ class PaymentApi
      * @param $currency
      * @return Response
      * @throws \Httpful\Exception\ConnectionErrorException
+     * @throws Model\Request\Exception
      */
     public function commitFormTransaction($transactionId, $amount, $currency)
     {
@@ -104,6 +106,67 @@ class PaymentApi
         return $this->makeRequest(self::$METHOD_POST, $uri, $transaction);
     }
 
+    /**
+     * Charge the credit card with a merchant initiated transaction
+     * @param string|UUID $transactionId
+     * @param Transaction $transaction
+     * @return Response
+     * @throws \Httpful\Exception\ConnectionErrorException
+     */
+    public function chargeMerchantInitiatedTransaction($transactionId, Transaction $transaction)
+    {
+        $uri = '/transaction/' . $transactionId . '/card/charge/merchant_initiated';
+        return $this->makeRequest(self::$METHOD_POST, $uri, $transaction);
+    }
+
+     /**
+     * Charge the credit card with a customer initiated transaction
+     * @param string|UUID $transactionId
+     * @param CustomerInitiatedTransaction $transaction
+     * @return Response
+     * @throws \Httpful\Exception\ConnectionErrorException
+     */
+    public function chargeCustomerInitiatedTransaction($transactionId, CustomerInitiatedTransaction $transaction)
+    {
+        $uri = '/transaction/' . $transactionId . '/card/charge/customer_initiated';
+        return $this->makeRequest(self::$METHOD_POST, $uri, $transaction);
+    }
+
+    /**
+     * Used to find out whether or not an uncommitted transaction succeeded, without actually committing (capturing) it.
+     * @param string|UUID $transactionId
+     * @return Response
+     * @throws \Httpful\Exception\ConnectionErrorException
+     */
+    public function transactionResult($transactionId)
+    {
+        $uri = '/transaction/' . $transactionId . '/result';
+        return $this->makeRequest(self::$METHOD_GET, $uri);
+    }
+
+    /**
+     * Used to find out whether or not an Siirto transaction succeeded.
+     * @param string|UUID $transactionId
+     * @return Response
+     * @throws \Httpful\Exception\ConnectionErrorException
+     */
+    public function siirtoTransactionResult($transactionId)
+    {
+        $uri = '/transaction/' . $transactionId . '/siirto/result';
+        return $this->makeRequest(self::$METHOD_GET, $uri);
+    }
+
+    /**
+     * Used to find out whether or not an Pivo transaction succeeded.
+     * @param string|UUID $transactionId
+     * @return Response
+     * @throws \Httpful\Exception\ConnectionErrorException
+     */
+    public function pivoTransactionResult($transactionId)
+    {
+        $uri = '/transaction/' . $transactionId . '/pivo/result';
+        return $this->makeRequest(self::$METHOD_GET, $uri);
+    }
 
     /**
      * @param string $transactionId
@@ -115,6 +178,32 @@ class PaymentApi
     {
         $uri = '/transaction/' . $transactionId . '/revert';
         return $this->makeRequest(self::$METHOD_POST, $uri, array('amount' => $amount));
+    }
+
+    /**
+     * @param string $transactionId
+     * @param string $referenceNumber
+     * @param string $amount
+     * @return \Httpful\Response
+     * @throws \Httpful\Exception\ConnectionErrorException
+     */
+    public function revertSiirtoTransaction($transactionId, $referenceNumber, $amount)
+    {
+        $uri = '/transaction/' . $transactionId . '/siirto/revert';
+        return $this->makeRequest(self::$METHOD_POST, $uri, array('reference_number' => $referenceNumber, 'amount' => $amount));
+    }
+
+    /**
+     * @param string $transactionId
+     * @param string $referenceNumber
+     * @param string $amount
+     * @return \Httpful\Response
+     * @throws \Httpful\Exception\ConnectionErrorException
+     */
+    public function revertPivoTransaction($transactionId, $referenceNumber, $amount)
+    {
+        $uri = '/transaction/' . $transactionId . '/pivo/revert';
+        return $this->makeRequest(self::$METHOD_POST, $uri, array('reference_number' => $referenceNumber, 'amount' => $amount));
     }
 
     /**
@@ -156,6 +245,7 @@ class PaymentApi
     /**
      * @param $tokenizeId
      * @return \Httpful\Response
+     * @throws \Httpful\Exception\ConnectionErrorException
      */
     public function tokenize($tokenizeId)
     {
@@ -179,6 +269,7 @@ class PaymentApi
      * @param string $date in format yyyyMMdd. The date to fetch the reconciliation report for.
      * @param bool $useDateProcessed Use the acquirer processed date instead of report received date. Might cause changes to the past
      * @return \Httpful\Response
+     * @throws \Httpful\Exception\ConnectionErrorException
      */
     public function fetchReconciliationReport($date, $useDateProcessed = false)
     {
@@ -226,6 +317,7 @@ class PaymentApi
      * @param $uri
      * @param null $body
      * @return \Httpful\Response
+     * @throws \Httpful\Exception\ConnectionErrorException
      */
     private function makeRequest($method, $uri, $body = null)
     {

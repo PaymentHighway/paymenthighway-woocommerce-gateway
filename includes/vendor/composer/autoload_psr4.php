@@ -7,6 +7,7 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'Symfony\\Polyfill\\Mbstring\\' => array($vendorDir . '/symfony/polyfill-mbstring'),
+    'Symfony\\Polyfill\\Ctype\\' => array($vendorDir . '/symfony/polyfill-ctype'),
     'Solinor\\PaymentHighway\\' => array($vendorDir . '/solinor/paymenthighwayio/src'),
     'Respect\\Validation\\' => array($vendorDir . '/respect/validation/library'),
     'Ramsey\\Uuid\\' => array($vendorDir . '/ramsey/uuid/src'),

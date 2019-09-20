@@ -2,8 +2,8 @@
 Contributors: paymenthighway
 Tags: payment gateway, credit card, woocommerce, payment highway, recurring payments
 Requires at least: 4.8
-Tested up to: 4.8
-Requires PHP: 5.4
+Tested up to: 5.2.2
+Requires PHP: 5.6
 Stable tag: trunk
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -37,5 +37,7 @@ For full documentation on the PaymentHighway API visit our developer website: [h
 * Initial release
 = 1.2.1 =
 * Bug fixes
+= 1.3.0 =
+* PSD2 compliant version. Paying with token (stored card) may result 3DS.
 
 == Upgrade Notice ==

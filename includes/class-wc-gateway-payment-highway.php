@@ -23,6 +23,7 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
     protected $save_all_credit_cards;
     const PH_REQUEST_SUCCESSFUL = 100;
     const PH_RESULT_FAILURE = 200;
+    const PH_RESULT_SOFT_DECLINE = 400;
 
     public function __construct() {
         global $paymentHighwaySuffixArray;
@@ -194,6 +195,10 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
             $this->logger->info( $response );
             $this->check_if_recurring_payment_needs_cvc($responseObject, $order);
             $order->payment_complete();
+            $order->add_order_note(
+                sprintf("Payment complete. Filing code: %s, transaction id: %s, Card type: %s, bin: %s, partial pan: %s ",
+                    $responseObject->filing_code, $order->get_transaction_id(), $responseObject->card->type, $responseObject->card->bin, $responseObject->card->partial_pan)
+            );
             if($this->is_subscription($order->get_id()) || $this->save_all_credit_cards) {
                 if ( get_current_user_id() !== 0 && ! $this->save_card( $responseObject ) ) {
                     wc_add_notice( __( 'Card could not be saved.', 'wc-payment-highway' ), 'notice' );
@@ -379,19 +384,16 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
 
         $amount = self::get_ph_amount( $order->get_total() );
 
-        $response       = $this->forms->payWithToken( $token->get_token(), $order, $amount, get_woocommerce_currency() );
+        $response       = $this->forms->payCitWithToken( $token->get_token(), $order, $amount, get_woocommerce_currency() );
         $responseObject = json_decode( $response );
 
         if ( $responseObject->result->code !== self::PH_REQUEST_SUCCESSFUL ) {
-            $this->logger->alert( "Error while making debit transaction with token. Order: $order_id, PH Code: " . $responseObject->result->code . ", " . $responseObject->result->message );
-            if($responseObject->result->code === self::PH_RESULT_FAILURE) {
-                wc_add_notice( __( 'Payment rejected, please try again.', 'wc-payment-highway' ), 'error' );
+            if($responseObject->result->code == self::PH_RESULT_SOFT_DECLINE) {
+                return $this->process_soft_decline_response($order_id, $responseObject);
             }
-
-            return array(
-                'result'   => 'fail',
-                'redirect' => $woocommerce->cart->get_checkout_url()
-            );
+            else {
+                return $this->process_failure_response($order_id, $responseObject);
+            }
         }
 
         $order->payment_complete();
@@ -399,6 +401,45 @@ class WC_Gateway_Payment_Highway extends WC_Payment_Gateway_CC {
         return array(
             'result'   => 'success',
             'redirect' => $order->get_checkout_order_received_url()
+        );
+    }
+
+    /**
+     * @param $order_id
+     * @param $responseObject
+     * @param $order WC_Order
+     * @return array
+     */
+    private function process_soft_decline_response($order_id, $responseObject, $order) {
+        global $woocommerce;
+
+        $three_d_secure_url = $responseObject->three_d_secure_url;
+
+        $this->logger->debug("Soft decline. 3ds url: " . $three_d_secure_url);
+
+        if(is_null($three_d_secure_url)) {
+            return $this->process_failure_response($order_id, $responseObject);
+        }
+
+        $order->add_order_note('Soft decline. Redirect to 3DS');
+        return array(
+            'result'   => 'success',
+            'redirect' => $three_d_secure_url
+        );
+    }
+
+    private function process_failure_response($order_id, $responseObject) {
+        global $woocommerce;
+
+
+        $this->logger->alert( "Error while making debit transaction with token. Order: $order_id, PH Code: " . $responseObject->result->code . ", " . $responseObject->result->message );
+        if($responseObject->result->code === self::PH_RESULT_FAILURE) {
+            wc_add_notice( __( 'Payment rejected, please try again.', 'wc-payment-highway' ), 'error' );
+        }
+
+        return array(
+            'result'   => 'fail',
+            'redirect' => $woocommerce->cart->get_checkout_url()
         );
     }
 

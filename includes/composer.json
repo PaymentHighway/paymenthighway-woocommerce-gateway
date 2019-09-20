@@ -1,6 +1,6 @@
 {
     "require" : 
     {
-        "solinor/paymenthighwayio" : "1.4.0"
+        "solinor/paymenthighwayio" : "1.7.0-RC2"
     }
 }
